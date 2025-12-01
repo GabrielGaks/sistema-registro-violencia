@@ -10,6 +10,10 @@
 ![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-ready-blue)
 ![Licença](https://img.shields.io/badge/licença-MIT-lightgrey)
 
+[![🚀 Demo Online](https://img.shields.io/badge/🚀-Demo_Online-success?style=for-the-badge)](https://gabrielgaks.github.io/sistema-registro-violencia/)
+
+**🌐 Sistema em Produção:** [https://gabrielgaks.github.io/sistema-registro-violencia/](https://gabrielgaks.github.io/sistema-registro-violencia/)
+
 </div>
 
 ---
@@ -37,6 +41,10 @@
 Sistema desenvolvido para a **Secretaria Municipal de Educação de Vitória/ES** para registro e acompanhamento de casos de violência escolar na rede municipal de ensino.
 
 ### 📊 Componentes Principais
+
+**🔗 Acesso Rápido:**
+- 📝 [Formulário de Registro](https://gabrielgaks.github.io/sistema-registro-violencia/index.html)
+- 🔧 [Painel Administrativo](https://gabrielgaks.github.io/sistema-registro-violencia/gerenciar.html)
 
 | Componente | Arquivo | Descrição |
 |------------|---------|-----------|
