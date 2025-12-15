@@ -20,10 +20,10 @@ Este erro acontece quando o Apps Script **NÃO está acessível** publicamente.
 ---
 
 ### 📍 PASSO 2: Atualizar o Código
-1. Abra o arquivo `Code.gs` no painel esquerdo
+1. Abra o arquivo `backend/Code.gs` no painel esquerdo
 2. **Selecione TODO o código** (Ctrl+A)
 3. **Delete** (Del ou Backspace)
-4. **Cole** o novo código do arquivo `Code.gs` local
+4. **Cole** o novo código do arquivo `backend/Code.gs` local
 5. **Salve** (Ctrl+S ou ícone disquete)
 
 ---

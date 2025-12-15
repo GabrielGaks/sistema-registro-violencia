@@ -4,7 +4,6 @@
 # ========================================
 
 # Arquivos de configuração com credenciais sensíveis
-config.js
 config.local.js
 .env
 .env.local
@@ -12,8 +11,17 @@ config.local.js
 .env.development
 
 # Arquivos do Google Apps Script (contêm IDs e URLs sensíveis)
+# ⚠️ IMPORTANTE: Estes arquivos contêm credenciais
+# Mantenha-os no .gitignore e use config.local.example.js como template
+backend/Code-Supabase.gs
+backend/Code.gs
 Code-Supabase.gs
+Code.gs
 *.gs.bak
+
+# ⚠️ NOTA: config.js pode conter credenciais em desenvolvimento
+# Se você adicionar credenciais reais ao config.js, adicione-o aqui:
+# config.js
 
 # Arquivos de backup
 *.bak

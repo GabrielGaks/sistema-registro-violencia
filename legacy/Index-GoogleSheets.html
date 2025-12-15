@@ -2837,7 +2837,7 @@ Zilda Andrade,ZA`;
       // Se não estiver autenticado, redireciona para login
       if (!userRole || !userEmail) {
         alert('Acesso negado! Faça login para acessar o sistema.');
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
         return;
       }
     }
@@ -2923,7 +2923,7 @@ Zilda Andrade,ZA`;
     function sair() {
       if (confirm('Deseja realmente sair do sistema?')) {
         sessionStorage.clear();
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
       }
     }
 

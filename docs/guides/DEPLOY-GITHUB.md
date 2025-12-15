@@ -106,7 +106,7 @@
 
 1. **Apague** todo o conteúdo padrão do arquivo `Code.gs`
 
-2. **Abra o arquivo** `Code.gs` deste repositório
+2. **Abra o arquivo** `backend/Code.gs` deste repositório
 
 3. **Copie TODO o conteúdo** (Ctrl+A, Ctrl+C)
 

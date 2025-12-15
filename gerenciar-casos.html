@@ -22,13 +22,14 @@
   <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- Estilos Elegantes Compartilhados -->
-  <link rel="stylesheet" href="styles-elegant.css">
-  
-  <!-- Sistema de Transições entre Páginas -->
-  <script src="page-transitions.js"></script>
+  <link rel="stylesheet" href="assets/css/styles-elegant.css">
   
   <!-- Configuração Centralizada -->
   <script src="config.js?v=2"></script>
+  <script src="assets/js/utils/config-loader.js"></script>
+  
+  <!-- Sistema de Transições entre Páginas -->
+  <script src="assets/js/utils/page-transitions.js"></script>
   
   <!-- Validação do CONFIG -->
   <script>
@@ -45,7 +46,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       const role = sessionStorage.getItem('userRole');
       if (!role) {
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
         return;
       }
       if (role === 'visualizador') {
@@ -1114,12 +1115,20 @@
     // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT
     // ========================================
     // Usando configuração centralizada (config.js)
-    const APPS_SCRIPT_URL = CONFIG.APPS_SCRIPT_CASOS;
+    let APPS_SCRIPT_URL;
+    
+    if (typeof CONFIG !== 'undefined' && CONFIG.APPS_SCRIPT_CASOS) {
+      APPS_SCRIPT_URL = CONFIG.APPS_SCRIPT_CASOS;
+      console.log('✅ Usando APPS_SCRIPT_CASOS do config.js');
+    } else {
+      console.error('❌ CONFIG não encontrado! Verifique se config.js está carregado.');
+      APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-Ocm2sp-6c7bFAdLF1Da4FtRVd_gWV0deScEvOko-Sii2NpTqHwkzG0mBYjIct2-o/exec';
+    }
     
     // Debug: Verifica se a URL foi carregada corretamente
-    console.log('🔧 [DEBUG] APPS_SCRIPT_URL:', APPS_SCRIPT_URL);
+    console.log('🔧 [DEBUG] APPS_SCRIPT_URL:', APPS_SCRIPT_URL ? APPS_SCRIPT_URL.substring(0, 50) + '...' : 'undefined');
     
-    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('SEU_SCRIPT')) {
+    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('SEU_SCRIPT') || APPS_SCRIPT_URL.includes('SEU_ID_AQUI')) {
       const msgErro = `
 ❌ ERRO DE CONFIGURAÇÃO
       
@@ -1188,6 +1197,117 @@ URL atual: ${APPS_SCRIPT_URL || 'undefined'}
       'Epilepsia',
       'Outros'
     ];
+    
+    // ========================================
+    // FUNÇÃO AUXILIAR: Encontrar melhor correspondência similar
+    // ========================================
+    function encontrarMelhorCorrespondencia(textoDigitado, opcoesDisponiveis, opcoesJaSelecionadas = []) {
+      if (!textoDigitado || !opcoesDisponiveis || opcoesDisponiveis.length === 0) {
+        return null;
+      }
+      
+      const textoNormalizado = normalizarTexto(textoDigitado);
+      const textoLower = textoNormalizado.toLowerCase();
+      
+      // Filtra opções já selecionadas
+      const opcoesDisponiveisFiltradas = opcoesDisponiveis.filter(op => !opcoesJaSelecionadas.includes(op));
+      
+      if (opcoesDisponiveisFiltradas.length === 0) {
+        return null;
+      }
+      
+      let melhorCorrespondencia = null;
+      let melhorScore = 0;
+      
+      opcoesDisponiveisFiltradas.forEach(opcao => {
+        const opcaoNormalizada = normalizarTexto(opcao);
+        const opcaoLower = opcaoNormalizada.toLowerCase();
+        
+        // Verifica correspondência exata (após normalização)
+        if (opcaoLower === textoLower) {
+          melhorCorrespondencia = opcao;
+          melhorScore = 1.0;
+          return;
+        }
+        
+        // Verifica se o texto digitado está contido na opção ou vice-versa
+        if (opcaoLower.includes(textoLower) || textoLower.includes(opcaoLower)) {
+          const score = Math.min(textoLower.length, opcaoLower.length) / Math.max(textoLower.length, opcaoLower.length);
+          if (score > melhorScore) {
+            melhorScore = score;
+            melhorCorrespondencia = opcao;
+          }
+        }
+        
+        // Calcula similaridade usando Levenshtein simplificado
+        const similaridade = calcularSimilaridade(textoLower, opcaoLower);
+        if (similaridade > melhorScore && similaridade >= 0.7) { // 70% de similaridade mínima
+          melhorScore = similaridade;
+          melhorCorrespondencia = opcao;
+        }
+      });
+      
+      // Retorna apenas se a similaridade for alta o suficiente (70%+)
+      return melhorScore >= 0.7 ? melhorCorrespondencia : null;
+    }
+    
+    // Normaliza texto para comparação
+    function normalizarTexto(texto) {
+      return String(texto || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    
+    // Calcula similaridade entre duas strings (0 a 1)
+    function calcularSimilaridade(str1, str2) {
+      if (str1 === str2) return 1.0;
+      if (str1.length === 0 || str2.length === 0) return 0;
+      
+      // Se uma contém a outra, retorna alta similaridade
+      if (str1.includes(str2) || str2.includes(str1)) {
+        return 0.9;
+      }
+      
+      // Calcula distância de Levenshtein simplificada
+      const maxLen = Math.max(str1.length, str2.length);
+      const distancia = distanciaLevenshtein(str1, str2);
+      return 1 - (distancia / maxLen);
+    }
+    
+    // Calcula distância de Levenshtein entre duas strings
+    function distanciaLevenshtein(str1, str2) {
+      const matrix = [];
+      const len1 = str1.length;
+      const len2 = str2.length;
+      
+      for (let i = 0; i <= len1; i++) {
+        matrix[i] = [i];
+      }
+      
+      for (let j = 0; j <= len2; j++) {
+        matrix[0][j] = j;
+      }
+      
+      for (let i = 1; i <= len1; i++) {
+        for (let j = 1; j <= len2; j++) {
+          if (str1[i - 1] === str2[j - 1]) {
+            matrix[i][j] = matrix[i - 1][j - 1];
+          } else {
+            matrix[i][j] = Math.min(
+              matrix[i - 1][j] + 1,
+              matrix[i][j - 1] + 1,
+              matrix[i - 1][j - 1] + 1
+            );
+          }
+        }
+      }
+      
+      return matrix[len1][len2];
+    }
     
     // ========================================
     // LISTAS PREDEFINIDAS - RAÇA/COR E TIPO DE VIOLÊNCIA
@@ -1449,9 +1569,19 @@ URL atual: ${APPS_SCRIPT_URL || 'undefined'}
       
       // Adiciona cada transtorno separadamente
       transtornos.forEach(transtorno => {
+        // Primeiro, tenta encontrar uma correspondência similar
+        const correspondencia = encontrarMelhorCorrespondencia(
+          transtorno, 
+          transtornosPredefinidos, 
+          editTranstornosSelecionados
+        );
+        
+        // Se encontrou correspondência similar, usa ela; caso contrário, usa o texto digitado
+        const valorFinal = correspondencia || transtorno;
+        
         // Evita duplicatas
-        if (!editTranstornosSelecionados.includes(transtorno)) {
-          editTranstornosSelecionados.push(transtorno);
+        if (!editTranstornosSelecionados.includes(valorFinal)) {
+          editTranstornosSelecionados.push(valorFinal);
         }
       });
       
@@ -1618,9 +1748,19 @@ URL atual: ${APPS_SCRIPT_URL || 'undefined'}
       const textoTrimmed = texto.trim();
       if (!textoTrimmed) return;
       
+      // Primeiro, tenta encontrar uma correspondência similar
+      const correspondencia = encontrarMelhorCorrespondencia(
+        textoTrimmed, 
+        tiposViolenciaPredefinidos, 
+        editTiposViolenciaSelecionados
+      );
+      
+      // Se encontrou correspondência similar, usa ela; caso contrário, usa o texto digitado
+      const valorFinal = correspondencia || textoTrimmed;
+      
       // Evita duplicatas
-      if (!editTiposViolenciaSelecionados.includes(textoTrimmed)) {
-        editTiposViolenciaSelecionados.push(textoTrimmed);
+      if (!editTiposViolenciaSelecionados.includes(valorFinal)) {
+        editTiposViolenciaSelecionados.push(valorFinal);
         renderizarTagsTipoViolenciaEdit();
       }
       
@@ -1736,9 +1876,19 @@ URL atual: ${APPS_SCRIPT_URL || 'undefined'}
       const textoTrimmed = texto.trim();
       if (!textoTrimmed) return;
       
+      // Primeiro, tenta encontrar uma correspondência similar
+      const correspondencia = encontrarMelhorCorrespondencia(
+        textoTrimmed, 
+        classificacoesViolenciaPredefinidas, 
+        editClassificacoesViolenciaSelecionadas
+      );
+      
+      // Se encontrou correspondência similar, usa ela; caso contrário, usa o texto digitado
+      const valorFinal = correspondencia || textoTrimmed;
+      
       // Evita duplicatas
-      if (!editClassificacoesViolenciaSelecionadas.includes(textoTrimmed)) {
-        editClassificacoesViolenciaSelecionadas.push(textoTrimmed);
+      if (!editClassificacoesViolenciaSelecionadas.includes(valorFinal)) {
+        editClassificacoesViolenciaSelecionadas.push(valorFinal);
         renderizarTagsClassificacaoViolenciaEdit();
       }
       
@@ -1853,9 +2003,19 @@ URL atual: ${APPS_SCRIPT_URL || 'undefined'}
       const textoTrimmed = texto.trim();
       if (!textoTrimmed) return;
       
+      // Primeiro, tenta encontrar uma correspondência similar
+      const correspondencia = encontrarMelhorCorrespondencia(
+        textoTrimmed, 
+        motivacoesViolenciaPredefinidas, 
+        editMotivacoesViolenciaSelecionadas
+      );
+      
+      // Se encontrou correspondência similar, usa ela; caso contrário, usa o texto digitado
+      const valorFinal = correspondencia || textoTrimmed;
+      
       // Evita duplicatas
-      if (!editMotivacoesViolenciaSelecionadas.includes(textoTrimmed)) {
-        editMotivacoesViolenciaSelecionadas.push(textoTrimmed);
+      if (!editMotivacoesViolenciaSelecionadas.includes(valorFinal)) {
+        editMotivacoesViolenciaSelecionadas.push(valorFinal);
         renderizarTagsMotivacaoViolenciaEdit();
       }
       
@@ -1966,8 +2126,18 @@ URL atual: ${APPS_SCRIPT_URL || 'undefined'}
       const textoTrimmed = texto.trim();
       if (!textoTrimmed) return;
       
-      if (!editEncaminhamentosSelecionados.includes(textoTrimmed)) {
-        editEncaminhamentosSelecionados.push(textoTrimmed);
+      // Primeiro, tenta encontrar uma correspondência similar
+      const correspondencia = encontrarMelhorCorrespondencia(
+        textoTrimmed, 
+        encaminhamentosPredefinidos, 
+        editEncaminhamentosSelecionados
+      );
+      
+      // Se encontrou correspondência similar, usa ela; caso contrário, usa o texto digitado
+      const valorFinal = correspondencia || textoTrimmed;
+      
+      if (!editEncaminhamentosSelecionados.includes(valorFinal)) {
+        editEncaminhamentosSelecionados.push(valorFinal);
         renderizarTagsEncaminhamentoEdit();
       }
       
@@ -2972,7 +3142,7 @@ tipoInstituicaoSelect.addEventListener('change', function() {
       // Se não estiver autenticado, redireciona para login
       if (!userRole || !userEmail) {
         alert('Acesso negado! Faça login para acessar o sistema.');
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
         return;
       }
     }
@@ -3037,7 +3207,7 @@ tipoInstituicaoSelect.addEventListener('change', function() {
     function sair() {
       if (confirm('Deseja realmente sair do sistema?')) {
         sessionStorage.clear();
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
       }
     }
 

@@ -22,10 +22,14 @@
   <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- Estilos Elegantes Compartilhados -->
-  <link rel="stylesheet" href="styles-elegant.css">
+  <link rel="stylesheet" href="assets/css/styles-elegant.css">
+  
+  <!-- Configuração Centralizada (DEVE VIR ANTES DOS SCRIPTS QUE USAM CONFIG) -->
+  <script src="config.js"></script>
+  <script src="assets/js/utils/config-loader.js"></script>
   
   <!-- Sistema de Transições entre Páginas -->
-  <script src="page-transitions.js"></script>
+  <script src="assets/js/utils/page-transitions.js"></script>
   
   <style>
     .alert {
@@ -485,15 +489,33 @@
     // ========================================
     // CONFIGURAÇÃO
     // ========================================
-    // Usando configuração centralizada (config.js)
-    const APPS_SCRIPT_URL = (typeof CONFIG !== 'undefined' && CONFIG.APPS_SCRIPT_AUTH) 
-      ? CONFIG.APPS_SCRIPT_AUTH 
-      : 'https://script.google.com/macros/s/SEU_ID_AQUI/exec';
+    // Aguarda o CONFIG estar disponível (config.js já foi carregado no <head>)
+    let APPS_SCRIPT_URL;
+    
+    // Debug: Verifica se CONFIG está disponível
+    console.log('🔍 Verificando CONFIG...', typeof CONFIG);
+    if (typeof CONFIG !== 'undefined') {
+      console.log('✅ CONFIG encontrado:', {
+        APPS_SCRIPT_AUTH: CONFIG.APPS_SCRIPT_AUTH ? CONFIG.APPS_SCRIPT_AUTH.substring(0, 50) + '...' : 'undefined'
+      });
+    }
+    
+    if (typeof CONFIG !== 'undefined' && CONFIG.APPS_SCRIPT_AUTH && !CONFIG.APPS_SCRIPT_AUTH.includes('SEU_ID_AQUI')) {
+      APPS_SCRIPT_URL = CONFIG.APPS_SCRIPT_AUTH;
+      console.log('✅ Usando APPS_SCRIPT_AUTH do config.js');
+    } else {
+      // Fallback para valor padrão do config.js
+      APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyi1ZAT9Lyow6xAl_S4iQAf06TF5Uqt9-v-bkn2bhtfu56n2Mb0jTa1YbDVstMvNZWd/exec';
+      console.warn('⚠️ CONFIG não encontrado ou URL inválida, usando URL padrão do config.js');
+    }
     
     // Validação: Verifica se está configurado
     if (APPS_SCRIPT_URL.includes('SEU_ID_AQUI')) {
-      console.warn('⚠️ ATENÇÃO: Configure APPS_SCRIPT_AUTH em config.js para gerenciar usuários');
+      console.error('❌ ERRO: Configure APPS_SCRIPT_AUTH em config.js para gerenciar usuários');
+      alert('❌ ERRO: Configure APPS_SCRIPT_AUTH em config.js');
     }
+    
+    console.log('🔗 URL final do Apps Script:', APPS_SCRIPT_URL.substring(0, 50) + '...');
     
     // Dados globais
     let todosUsuarios = [];
@@ -1002,7 +1024,7 @@
     function sair() {
       if (confirm('Deseja realmente sair do sistema?')) {
         sessionStorage.clear();
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
       }
     }
 
@@ -1032,7 +1054,7 @@
       const userRole = sessionStorage.getItem('userRole');
       
       if (!userRole) {
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
         return;
       }
       

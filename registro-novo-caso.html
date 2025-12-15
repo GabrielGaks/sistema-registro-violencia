@@ -22,19 +22,20 @@
   <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- Estilos Elegantes Compartilhados -->
-  <link rel="stylesheet" href="styles-elegant.css">
-  
-  <!-- Sistema de Transições entre Páginas -->
-  <script src="page-transitions.js"></script>
+  <link rel="stylesheet" href="assets/css/styles-elegant.css">
   
   <!-- Configuração Centralizada -->
   <script src="config.js"></script>
+  <script src="assets/js/utils/config-loader.js"></script>
+  
+  <!-- Sistema de Transições entre Páginas -->
+  <script src="assets/js/utils/page-transitions.js"></script>
   <script>
     // Bloqueia acesso de visualizadores a esta página
     document.addEventListener('DOMContentLoaded', function() {
       const role = sessionStorage.getItem('userRole');
       if (!role) {
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
         return;
       }
       if (role === 'visualizador') {
@@ -478,6 +479,58 @@
     <!-- Área de Alertas -->
     <div id="alertContainer"></div>
     
+    <!-- Indicador de Progresso -->
+    <div id="progressIndicator" class="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-4 sm:p-5 mb-6 hidden">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <span class="text-lg sm:text-xl">📊</span>
+          <div>
+            <h3 class="text-sm sm:text-base font-semibold text-gray-800">Progresso do Formulário</h3>
+            <p class="text-xs sm:text-sm text-gray-600" id="progressText">Calculando...</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- Indicador de Auto-Save -->
+          <div id="indicadorRascunho" class="hidden"></div>
+          
+          <button 
+            id="btnSalvarRascunho" 
+            type="button"
+            onclick="AutoSave.salvar()"
+            class="btn-elegant btn-secondary-elegant inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm"
+            title="Salvar rascunho agora"
+          >
+            <span>💾</span>
+            <span class="hidden sm:inline">Salvar Agora</span>
+          </button>
+          
+          <button 
+            type="button"
+            onclick="if(confirm('Deseja realmente limpar o rascunho?')) AutoSave.limpar()"
+            class="btn-elegant btn-secondary-elegant inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-gray-100 hover:bg-gray-200 text-gray-700"
+            title="Limpar rascunho salvo"
+          >
+            <span>🗑️</span>
+            <span class="hidden sm:inline">Limpar</span>
+          </button>
+          
+          <span id="draftStatus" class="text-xs text-gray-500 hidden">
+            <span id="draftLastSave"></span>
+          </span>
+        </div>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-3 sm:h-4 overflow-hidden shadow-inner">
+        <div 
+          id="progressBar" 
+          class="bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 h-full rounded-full transition-all duration-500 ease-out shadow-sm"
+          style="width: 0%"
+        ></div>
+      </div>
+      <div class="mt-2 flex flex-wrap gap-2 text-xs text-gray-600">
+        <span id="progressDetails"></span>
+      </div>
+    </div>
+    
     <!-- Formulário -->
     <form id="registroForm" class="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/60 p-4 sm:p-6 md:p-8 lg:p-10 space-y-6 sm:space-y-8">
       
@@ -647,8 +700,7 @@
                 <option value="Heterossexual">Heterossexual</option>
                 <option value="Homossexual">Homossexual</option>
                 <option value="Bissexual">Bissexual</option>
-                <option value="Outro">Assexual</option>
-                <option value="Não informado">Não informado</option>
+                <option value="Outro">Outro</option>
               </select>
             </div>
             
@@ -1189,13 +1241,82 @@
     // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT
     // ========================================
     // Usando configuração centralizada (config.js)
-    const APPS_SCRIPT_URL = (typeof CONFIG !== 'undefined' && CONFIG.APPS_SCRIPT_CASOS) 
-      ? CONFIG.APPS_SCRIPT_CASOS 
-      : 'https://script.google.com/macros/s/SEU_ID_AQUI/exec';
+    // Função para obter a URL do Apps Script de forma segura
+    function obterURLAppsScript() {
+      // Aguarda um pouco para garantir que config.js foi carregado
+      if (typeof CONFIG === 'undefined') {
+        console.warn('⚠️ CONFIG não está disponível ainda. Tentando aguardar...');
+        // Tenta novamente após um pequeno delay
+        setTimeout(() => {
+          if (typeof CONFIG !== 'undefined' && CONFIG.APPS_SCRIPT_CASOS) {
+            console.log('✅ CONFIG carregado após delay');
+          } else {
+            console.error('❌ CONFIG ainda não disponível após delay');
+          }
+        }, 100);
+      }
+      
+      console.log('🔧 Verificando configuração do Apps Script...');
+      console.log('CONFIG disponível?', typeof CONFIG !== 'undefined');
+      
+      if (typeof CONFIG !== 'undefined') {
+        console.log('CONFIG completo:', CONFIG);
+        console.log('CONFIG.APPS_SCRIPT_CASOS?', CONFIG.APPS_SCRIPT_CASOS);
+      }
+      
+      const url = (typeof CONFIG !== 'undefined' && CONFIG.APPS_SCRIPT_CASOS) 
+        ? CONFIG.APPS_SCRIPT_CASOS 
+        : 'https://script.google.com/macros/s/SEU_ID_AQUI/exec';
+      
+      console.log('📡 URL do Apps Script obtida:', url);
+      
+      // Validação: Verifica se está configurado
+      if (url.includes('SEU_ID_AQUI')) {
+        console.error('❌ ATENÇÃO: Configure APPS_SCRIPT_CASOS em config.js para salvar registros');
+        console.error('⚠️ A URL do Apps Script não está configurada!');
+        return null; // Retorna null se não estiver configurado
+      } else {
+        console.log('✅ URL do Apps Script configurada corretamente:', url);
+        return url;
+      }
+    }
     
-    // Validação: Verifica se está configurado
-    if (APPS_SCRIPT_URL.includes('SEU_ID_AQUI')) {
-      console.warn('⚠️ ATENÇÃO: Configure APPS_SCRIPT_CASOS em config.js para salvar registros');
+    // Obtém a URL (pode ser null se não estiver configurada)
+    // Aguarda o carregamento completo da página para garantir que config.js foi carregado
+    let APPS_SCRIPT_URL = null;
+    
+    // Função para inicializar a URL quando o DOM estiver pronto
+    function inicializarURLAppsScript() {
+      // Usa window.CONFIG diretamente (não pode reatribuir const)
+      const config = typeof window !== 'undefined' ? window.CONFIG : (typeof CONFIG !== 'undefined' ? CONFIG : null);
+      
+      if (config && config.APPS_SCRIPT_CASOS) {
+        APPS_SCRIPT_URL = config.APPS_SCRIPT_CASOS;
+        console.log('✅ URL do Apps Script inicializada:', APPS_SCRIPT_URL);
+        console.log('🔍 Verificando se é a URL correta...');
+        
+        // Verifica se é a URL antiga (que pode estar em cache)
+        if (APPS_SCRIPT_URL.includes('AKfycbz-Ocm2sp-6c7bFAdLF1Da4FtRVd_gWV0deScEvOko-Sii2NpTqHwkzG0mBYjIct2-o')) {
+          console.warn('⚠️ ATENÇÃO: Você pode estar usando uma URL antiga em cache!');
+          console.warn('💡 Solução: Limpe o cache do navegador (Ctrl+Shift+Delete) ou faça um Hard Refresh (Ctrl+F5)');
+        }
+      } else {
+        console.error('❌ CONFIG.APPS_SCRIPT_CASOS não está disponível');
+        console.error('CONFIG disponível?', typeof config !== 'undefined' && config !== null);
+        if (config) {
+          console.error('CONFIG completo:', config);
+        }
+        APPS_SCRIPT_URL = 'https://script.google.com/macros/s/SEU_ID_AQUI/exec';
+      }
+    }
+    
+    // Tenta inicializar imediatamente
+    if (document.readyState === 'loading') {
+      // Se ainda está carregando, aguarda DOMContentLoaded
+      document.addEventListener('DOMContentLoaded', inicializarURLAppsScript);
+    } else {
+      // Se já carregou, inicializa imediatamente
+      inicializarURLAppsScript();
     }
     
     // ========================================
@@ -1243,6 +1364,117 @@
     // ========================================
     // DADOS DAS INSTITUIÇÕES
     // ========================================
+    
+    // ========================================
+    // FUNÇÃO AUXILIAR: Encontrar melhor correspondência similar
+    // ========================================
+    function encontrarMelhorCorrespondencia(textoDigitado, opcoesDisponiveis, opcoesJaSelecionadas = []) {
+      if (!textoDigitado || !opcoesDisponiveis || opcoesDisponiveis.length === 0) {
+        return null;
+      }
+      
+      const textoNormalizado = normalizarTexto(textoDigitado);
+      const textoLower = textoNormalizado.toLowerCase();
+      
+      // Filtra opções já selecionadas
+      const opcoesDisponiveisFiltradas = opcoesDisponiveis.filter(op => !opcoesJaSelecionadas.includes(op));
+      
+      if (opcoesDisponiveisFiltradas.length === 0) {
+        return null;
+      }
+      
+      let melhorCorrespondencia = null;
+      let melhorScore = 0;
+      
+      opcoesDisponiveisFiltradas.forEach(opcao => {
+        const opcaoNormalizada = normalizarTexto(opcao);
+        const opcaoLower = opcaoNormalizada.toLowerCase();
+        
+        // Verifica correspondência exata (após normalização)
+        if (opcaoLower === textoLower) {
+          melhorCorrespondencia = opcao;
+          melhorScore = 1.0;
+          return;
+        }
+        
+        // Verifica se o texto digitado está contido na opção ou vice-versa
+        if (opcaoLower.includes(textoLower) || textoLower.includes(opcaoLower)) {
+          const score = Math.min(textoLower.length, opcaoLower.length) / Math.max(textoLower.length, opcaoLower.length);
+          if (score > melhorScore) {
+            melhorScore = score;
+            melhorCorrespondencia = opcao;
+          }
+        }
+        
+        // Calcula similaridade usando Levenshtein simplificado
+        const similaridade = calcularSimilaridade(textoLower, opcaoLower);
+        if (similaridade > melhorScore && similaridade >= 0.7) { // 70% de similaridade mínima
+          melhorScore = similaridade;
+          melhorCorrespondencia = opcao;
+        }
+      });
+      
+      // Retorna apenas se a similaridade for alta o suficiente (70%+)
+      return melhorScore >= 0.7 ? melhorCorrespondencia : null;
+    }
+    
+    // Normaliza texto para comparação
+    function normalizarTexto(texto) {
+      return String(texto || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    
+    // Calcula similaridade entre duas strings (0 a 1)
+    function calcularSimilaridade(str1, str2) {
+      if (str1 === str2) return 1.0;
+      if (str1.length === 0 || str2.length === 0) return 0;
+      
+      // Se uma contém a outra, retorna alta similaridade
+      if (str1.includes(str2) || str2.includes(str1)) {
+        return 0.9;
+      }
+      
+      // Calcula distância de Levenshtein simplificada
+      const maxLen = Math.max(str1.length, str2.length);
+      const distancia = distanciaLevenshtein(str1, str2);
+      return 1 - (distancia / maxLen);
+    }
+    
+    // Calcula distância de Levenshtein entre duas strings
+    function distanciaLevenshtein(str1, str2) {
+      const matrix = [];
+      const len1 = str1.length;
+      const len2 = str2.length;
+      
+      for (let i = 0; i <= len1; i++) {
+        matrix[i] = [i];
+      }
+      
+      for (let j = 0; j <= len2; j++) {
+        matrix[0][j] = j;
+      }
+      
+      for (let i = 1; i <= len1; i++) {
+        for (let j = 1; j <= len2; j++) {
+          if (str1[i - 1] === str2[j - 1]) {
+            matrix[i][j] = matrix[i - 1][j - 1];
+          } else {
+            matrix[i][j] = Math.min(
+              matrix[i - 1][j] + 1,
+              matrix[i][j - 1] + 1,
+              matrix[i - 1][j - 1] + 1
+            );
+          }
+        }
+      }
+      
+      return matrix[len1][len2];
+    }
     
     // ========================================
     // LISTA DE TRANSTORNOS/DEFICIÊNCIAS PREDEFINIDOS
@@ -1314,6 +1546,11 @@
     function removerTranstorno(index) {
       transtornosSelecionados.splice(index, 1);
       renderizarTagsTranstornos();
+      
+      // Salva automaticamente após remover tag
+      if (typeof AutoSave !== 'undefined') {
+        AutoSave.salvar();
+      }
     }
     
     // Adiciona um transtorno
@@ -1326,9 +1563,19 @@
       
       // Adiciona cada transtorno separadamente
       transtornos.forEach(transtorno => {
+        // Primeiro, tenta encontrar uma correspondência similar
+        const correspondencia = encontrarMelhorCorrespondencia(
+          transtorno, 
+          transtornosPredefinidos, 
+          transtornosSelecionados
+        );
+        
+        // Se encontrou correspondência similar, usa ela; caso contrário, usa o texto digitado
+        const valorFinal = correspondencia || transtorno;
+        
         // Evita duplicatas
-        if (!transtornosSelecionados.includes(transtorno)) {
-          transtornosSelecionados.push(transtorno);
+        if (!transtornosSelecionados.includes(valorFinal)) {
+          transtornosSelecionados.push(valorFinal);
         }
       });
       
@@ -1337,6 +1584,11 @@
       // Limpa input
       document.getElementById('pcdDetalhes-input').value = '';
       document.getElementById('pcdDetalhes-suggestions').classList.add('hidden');
+      
+      // Salva automaticamente após adicionar tag
+      if (typeof AutoSave !== 'undefined') {
+        AutoSave.salvar();
+      }
     }
     
     // Filtra e mostra sugestões de transtornos
@@ -1439,6 +1691,11 @@
     function removerEncaminhamento(index) {
       encaminhamentosSelecionados.splice(index, 1);
       renderizarTags();
+      
+      // Salva automaticamente após remover tag
+      if (typeof AutoSave !== 'undefined') {
+        AutoSave.salvar();
+      }
     }
     
     // Adiciona um encaminhamento
@@ -1446,10 +1703,25 @@
       const textoTrimmed = texto.trim();
       if (!textoTrimmed) return;
       
+      // Primeiro, tenta encontrar uma correspondência similar
+      const correspondencia = encontrarMelhorCorrespondencia(
+        textoTrimmed, 
+        encaminhamentosPredefinidos, 
+        encaminhamentosSelecionados
+      );
+      
+      // Se encontrou correspondência similar, usa ela; caso contrário, usa o texto digitado
+      const valorFinal = correspondencia || textoTrimmed;
+      
       // Evita duplicatas
-      if (!encaminhamentosSelecionados.includes(textoTrimmed)) {
-        encaminhamentosSelecionados.push(textoTrimmed);
+      if (!encaminhamentosSelecionados.includes(valorFinal)) {
+        encaminhamentosSelecionados.push(valorFinal);
         renderizarTags();
+        
+        // Salva automaticamente após adicionar tag
+        if (typeof AutoSave !== 'undefined') {
+          AutoSave.salvar();
+        }
       }
       
       // Limpa input
@@ -1565,6 +1837,11 @@
     function removerTipoViolencia(index) {
       tiposViolenciaSelecionados.splice(index, 1);
       renderizarTagsTipoViolencia();
+      
+      // Salva automaticamente após remover tag
+      if (typeof AutoSave !== 'undefined') {
+        AutoSave.salvar();
+      }
     }
     
     // Adiciona um tipo de violência
@@ -1572,10 +1849,25 @@
       const textoTrimmed = texto.trim();
       if (!textoTrimmed) return;
       
+      // Primeiro, tenta encontrar uma correspondência similar
+      const correspondencia = encontrarMelhorCorrespondencia(
+        textoTrimmed, 
+        tiposViolenciaPredefinidos, 
+        tiposViolenciaSelecionados
+      );
+      
+      // Se encontrou correspondência similar, usa ela; caso contrário, usa o texto digitado
+      const valorFinal = correspondencia || textoTrimmed;
+      
       // Evita duplicatas
-      if (!tiposViolenciaSelecionados.includes(textoTrimmed)) {
-        tiposViolenciaSelecionados.push(textoTrimmed);
+      if (!tiposViolenciaSelecionados.includes(valorFinal)) {
+        tiposViolenciaSelecionados.push(valorFinal);
         renderizarTagsTipoViolencia();
+        
+        // Salva automaticamente após adicionar tag
+        if (typeof AutoSave !== 'undefined') {
+          AutoSave.salvar();
+        }
       }
       
       // Limpa input
@@ -1667,6 +1959,11 @@
     function removerClassificacaoViolencia(index) {
       classificacoesViolenciaSelecionadas.splice(index, 1);
       renderizarTagsClassificacaoViolencia();
+      
+      // Salva automaticamente após remover tag
+      if (typeof AutoSave !== 'undefined') {
+        AutoSave.salvar();
+      }
     }
     
     // Adiciona uma classificação da violência
@@ -1674,9 +1971,24 @@
       const textoTrimmed = texto.trim();
       if (!textoTrimmed) return;
       
-      if (!classificacoesViolenciaSelecionadas.includes(textoTrimmed)) {
-        classificacoesViolenciaSelecionadas.push(textoTrimmed);
+      // Primeiro, tenta encontrar uma correspondência similar
+      const correspondencia = encontrarMelhorCorrespondencia(
+        textoTrimmed, 
+        classificacoesViolenciaPredefinidas, 
+        classificacoesViolenciaSelecionadas
+      );
+      
+      // Se encontrou correspondência similar, usa ela; caso contrário, usa o texto digitado
+      const valorFinal = correspondencia || textoTrimmed;
+      
+      if (!classificacoesViolenciaSelecionadas.includes(valorFinal)) {
+        classificacoesViolenciaSelecionadas.push(valorFinal);
         renderizarTagsClassificacaoViolencia();
+        
+        // Salva automaticamente após adicionar tag
+        if (typeof AutoSave !== 'undefined') {
+          AutoSave.salvar();
+        }
       }
       
       document.getElementById('classificacaoViolencia-input').value = '';
@@ -1767,6 +2079,11 @@
     function removerMotivacaoViolencia(index) {
       motivacoesViolenciaSelecionadas.splice(index, 1);
       renderizarTagsMotivacaoViolencia();
+      
+      // Salva automaticamente após remover tag
+      if (typeof AutoSave !== 'undefined') {
+        AutoSave.salvar();
+      }
     }
     
     // Adiciona uma motivação da violência
@@ -1774,9 +2091,24 @@
       const textoTrimmed = texto.trim();
       if (!textoTrimmed) return;
       
-      if (!motivacoesViolenciaSelecionadas.includes(textoTrimmed)) {
-        motivacoesViolenciaSelecionadas.push(textoTrimmed);
+      // Primeiro, tenta encontrar uma correspondência similar
+      const correspondencia = encontrarMelhorCorrespondencia(
+        textoTrimmed, 
+        motivacoesViolenciaPredefinidas, 
+        motivacoesViolenciaSelecionadas
+      );
+      
+      // Se encontrou correspondência similar, usa ela; caso contrário, usa o texto digitado
+      const valorFinal = correspondencia || textoTrimmed;
+      
+      if (!motivacoesViolenciaSelecionadas.includes(valorFinal)) {
+        motivacoesViolenciaSelecionadas.push(valorFinal);
         renderizarTagsMotivacaoViolencia();
+        
+        // Salva automaticamente após adicionar tag
+        if (typeof AutoSave !== 'undefined') {
+          AutoSave.salvar();
+        }
       }
       
       document.getElementById('motivacaoViolencia-input').value = '';
@@ -2397,7 +2729,824 @@
       });
     }
     
-    // Função de validação no frontend
+    // ========================================
+    // MÓDULO DE AUTO-SAVE
+    // ========================================
+    const AutoSave = {
+      CHAVE_STORAGE: 'rascunho_novo_caso',
+      DEBOUNCE_TIMEOUT: null,
+      DEBOUNCE_DELAY: 1000, // 1 segundo
+      BACKUP_INTERVAL: null,
+      BACKUP_DELAY: 30000, // 30 segundos
+    
+      // Inicializar sistema de auto-save
+      inicializar() {
+        console.log('🔄 Inicializando auto-save...');
+        
+        // Carregar rascunho ao abrir página (aguarda um pouco para garantir que tudo está carregado)
+        setTimeout(() => {
+          this.carregarRascunho();
+        }, 1000);
+        
+        // Configurar listeners para todos os campos
+        this.configurarListeners();
+        
+        // Iniciar backup automático a cada 30s
+        this.iniciarBackupAutomatico();
+        
+        // Salvar antes de sair da página
+        window.addEventListener('beforeunload', () => this.salvar());
+      },
+      
+      // Configurar eventos de salvamento
+      configurarListeners() {
+        const form = document.getElementById('registroForm');
+        if (!form) return;
+        
+        // Campos de texto com debounce
+        form.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(campo => {
+          campo.addEventListener('input', () => this.salvarComDebounce());
+        });
+        
+        // Campos de data com debounce
+        form.querySelectorAll('input[type="date"]').forEach(campo => {
+          campo.addEventListener('change', () => this.salvar());
+        });
+        
+        // Selects (salvamento imediato)
+        form.querySelectorAll('select').forEach(campo => {
+          campo.addEventListener('change', () => this.salvar());
+        });
+        
+        // Radio buttons (salvamento imediato)
+        form.querySelectorAll('input[type="radio"]').forEach(campo => {
+          campo.addEventListener('change', () => this.salvar());
+        });
+        
+        // Observar mudanças nos sistemas de tags
+        this.observarMudancasTags();
+      },
+      
+      // Salvamento com debounce (para campos de texto)
+      salvarComDebounce() {
+        clearTimeout(this.DEBOUNCE_TIMEOUT);
+        this.DEBOUNCE_TIMEOUT = setTimeout(() => {
+          this.salvar();
+        }, this.DEBOUNCE_DELAY);
+      },
+      
+      // Salvar dados no localStorage
+      salvar() {
+        try {
+          const dados = this.coletarDados();
+          
+          // Não salva se não houver dados
+          if (Object.keys(dados).length === 0) {
+            return;
+          }
+          
+          const rascunho = {
+            timestamp: Date.now(),
+            versao: "1.0",
+            dados: dados
+          };
+          
+          localStorage.setItem(this.CHAVE_STORAGE, JSON.stringify(rascunho));
+          
+          // Atualizar indicador visual
+          this.atualizarIndicadorSalvamento(new Date());
+          
+          console.log('💾 Auto-save: rascunho salvo');
+          
+        } catch (error) {
+          console.error('❌ Erro ao salvar rascunho:', error);
+          if (error.name === 'QuotaExceededError') {
+            console.warn('⚠️ localStorage cheio, tentando limpar e salvar novamente...');
+            localStorage.removeItem(this.CHAVE_STORAGE);
+            try {
+              const dados = this.coletarDados();
+              const rascunho = {
+                timestamp: Date.now(),
+                versao: "1.0",
+                dados: dados
+              };
+              localStorage.setItem(this.CHAVE_STORAGE, JSON.stringify(rascunho));
+              this.atualizarIndicadorSalvamento(new Date());
+            } catch (e2) {
+              console.error('❌ Erro persistente ao salvar:', e2);
+            }
+          }
+        }
+      },
+      
+      // Coletar dados de todos os campos
+      coletarDados() {
+        const dados = {};
+        const form = document.getElementById('registroForm');
+        if (!form) return dados;
+        
+        // Campos simples (input, select, textarea)
+        form.querySelectorAll('input, select, textarea').forEach(campo => {
+          // Ignora botões e campos de input de tags
+          if (campo.type === 'button' || campo.type === 'submit') return;
+          if (campo.id && (campo.id.includes('-input') || campo.id.includes('-tags'))) return;
+          
+          const name = campo.name || campo.id;
+          if (!name) return;
+          
+          let valor = '';
+          
+          if (campo.type === 'radio') {
+            if (campo.checked) {
+              dados[name] = campo.value;
+            }
+          } else if (campo.type === 'checkbox') {
+            if (campo.checked) {
+              dados[name] = campo.value;
+            }
+          } else if (campo.tagName === 'SELECT') {
+            valor = campo.value || '';
+            if (valor) dados[name] = valor;
+          } else if (campo.type === 'hidden') {
+            valor = campo.value || '';
+            if (valor) dados[name] = valor;
+          } else {
+            valor = campo.value || '';
+            if (valor && valor.trim() !== '') {
+              dados[name] = valor;
+            }
+          }
+        });
+        
+        // Campos hidden de tags (que contêm os valores reais)
+        ['pcdDetalhes', 'tipoViolencia', 'classificacaoViolencia', 'motivacaoViolencia', 'encaminhamento'].forEach(id => {
+          const campo = document.getElementById(id);
+          if (campo && campo.value) {
+            dados[id] = campo.value;
+          }
+        });
+        
+        // Arrays de tags (backup)
+        if (typeof transtornosSelecionados !== 'undefined' && Array.isArray(transtornosSelecionados) && transtornosSelecionados.length > 0) {
+          dados.transtornosSelecionados = [...transtornosSelecionados];
+        }
+        if (typeof tiposViolenciaSelecionados !== 'undefined' && Array.isArray(tiposViolenciaSelecionados) && tiposViolenciaSelecionados.length > 0) {
+          dados.tiposViolenciaSelecionados = [...tiposViolenciaSelecionados];
+        }
+        if (typeof classificacoesSelecionadas !== 'undefined' && Array.isArray(classificacoesSelecionadas) && classificacoesSelecionadas.length > 0) {
+          dados.classificacoesSelecionadas = [...classificacoesSelecionadas];
+        }
+        if (typeof motivacoesSelecionadas !== 'undefined' && Array.isArray(motivacoesSelecionadas) && motivacoesSelecionadas.length > 0) {
+          dados.motivacoesSelecionadas = [...motivacoesSelecionadas];
+        }
+        if (typeof encaminhamentosSelecionados !== 'undefined' && Array.isArray(encaminhamentosSelecionados) && encaminhamentosSelecionados.length > 0) {
+          dados.encaminhamentosSelecionados = [...encaminhamentosSelecionados];
+        }
+        
+        return dados;
+      },
+      
+      // Carregar rascunho do localStorage
+      carregarRascunho() {
+        try {
+          const rascunhoStr = localStorage.getItem(this.CHAVE_STORAGE);
+          
+          if (!rascunhoStr) {
+            console.log('ℹ️ Nenhum rascunho encontrado');
+            return;
+          }
+          
+          const rascunho = JSON.parse(rascunhoStr);
+          
+          if (!rascunho.dados || Object.keys(rascunho.dados).length === 0) {
+            console.log('ℹ️ Rascunho vazio encontrado');
+            localStorage.removeItem(this.CHAVE_STORAGE);
+            return;
+          }
+          
+          console.log('📂 Carregando rascunho salvo em:', new Date(rascunho.timestamp));
+          
+          this.preencherFormulario(rascunho.dados);
+          this.atualizarIndicadorSalvamento(new Date(rascunho.timestamp));
+          
+          // Mostrar notificação discreta
+          this.mostrarNotificacaoRascunho(rascunho.timestamp);
+          
+        } catch (error) {
+          console.error('❌ Erro ao carregar rascunho:', error);
+          // Limpar rascunho corrompido
+          localStorage.removeItem(this.CHAVE_STORAGE);
+        }
+      },
+      
+      // Preencher formulário com dados salvos
+      preencherFormulario(dados) {
+        const form = document.getElementById('registroForm');
+        if (!form) return;
+        
+        // Primeiro, restaurar campos normais
+        Object.keys(dados).forEach(id => {
+          // Ignora arrays de tags (serão restaurados depois)
+          if (id.endsWith('Selecionados') || id.endsWith('Selecionadas')) {
+            return;
+          }
+          
+          const valor = dados[id];
+          if (valor === null || valor === undefined || valor === '') return;
+          
+          // Tenta encontrar por name primeiro
+          let campo = form.querySelector(`[name="${id}"]`);
+          
+          // Se não encontrar, tenta por id
+          if (!campo) {
+            campo = document.getElementById(id);
+          }
+          
+          if (campo) {
+            try {
+              if (campo.type === 'radio') {
+                // Radio buttons
+                const radio = document.querySelector(`input[name="${id}"][value="${valor}"]`);
+                if (radio) {
+                  radio.checked = true;
+                  radio.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+              } else if (campo.tagName === 'SELECT') {
+                // Selects
+                campo.value = valor;
+                // Atualiza visualmente selects customizados
+                const wrapper = campo.closest('.custom-select-wrapper');
+                if (wrapper) {
+                  const trigger = wrapper.querySelector('.custom-select-trigger');
+                  if (trigger) {
+                    const selectedOption = campo.options[campo.selectedIndex];
+                    if (selectedOption) {
+                      trigger.textContent = selectedOption.textContent;
+                    }
+                  }
+                }
+                // Disparar evento change para atualizar campos dependentes
+                campo.dispatchEvent(new Event('change', { bubbles: true }));
+                
+                // Tratamento especial para campo PCD condicional
+                if (id === 'pcdTranstorno') {
+                  const pcdDetalhesContainer = document.getElementById('pcdDetalhesContainer');
+                  if (pcdDetalhesContainer) {
+                    if (valor === 'Sim') {
+                      pcdDetalhesContainer.classList.remove('hidden');
+                      pcdDetalhesContainer.style.animation = 'slideDown 0.3s ease-out';
+                    } else {
+                      pcdDetalhesContainer.classList.add('hidden');
+                    }
+                  }
+                }
+                
+                // Tratamento especial para tipoInstituicao (habilita campo de autocomplete)
+                if (id === 'tipoInstituicao') {
+                  const cmeiEmefInput = document.getElementById('cmeiEmef');
+                  if (cmeiEmefInput) {
+                    cmeiEmefInput.disabled = !valor;
+                    if (!valor) {
+                      cmeiEmefInput.placeholder = 'Primeiro selecione o tipo de instituição';
+                    } else {
+                      cmeiEmefInput.placeholder = 'Digite para filtrar as instituições disponíveis';
+                    }
+                  }
+                }
+              } else if (campo.type === 'date') {
+                // Campos de data
+                campo.value = valor;
+              } else if (campo.type === 'hidden') {
+                // Campos hidden (tags)
+                campo.value = valor;
+              } else {
+                // Campos normais
+                campo.value = valor;
+              }
+            } catch (e) {
+              console.warn('⚠️ Erro ao restaurar campo', id, ':', e);
+            }
+          }
+        });
+        
+        // Aguarda um pouco e depois restaura tags
+        setTimeout(() => {
+          // Restaurar arrays de tags
+          if (dados.transtornosSelecionados && Array.isArray(dados.transtornosSelecionados)) {
+            if (typeof transtornosSelecionados !== 'undefined') {
+              transtornosSelecionados = [...dados.transtornosSelecionados];
+              if (typeof renderizarTagsTranstornos === 'function') {
+                renderizarTagsTranstornos();
+              }
+            }
+          }
+          
+          if (dados.tiposViolenciaSelecionados && Array.isArray(dados.tiposViolenciaSelecionados)) {
+            if (typeof tiposViolenciaSelecionados !== 'undefined') {
+              tiposViolenciaSelecionados = [...dados.tiposViolenciaSelecionados];
+              if (typeof renderizarTagsTipoViolencia === 'function') {
+                renderizarTagsTipoViolencia();
+              }
+            }
+          }
+          
+          if (dados.classificacoesSelecionadas && Array.isArray(dados.classificacoesSelecionadas)) {
+            if (typeof classificacoesSelecionadas !== 'undefined') {
+              classificacoesSelecionadas = [...dados.classificacoesSelecionadas];
+              if (typeof renderizarTagsClassificacaoViolencia === 'function') {
+                renderizarTagsClassificacaoViolencia();
+              }
+            }
+          }
+          
+          if (dados.motivacoesSelecionadas && Array.isArray(dados.motivacoesSelecionadas)) {
+            if (typeof motivacoesSelecionadas !== 'undefined') {
+              motivacoesSelecionadas = [...dados.motivacoesSelecionadas];
+              if (typeof renderizarTagsMotivacaoViolencia === 'function') {
+                renderizarTagsMotivacaoViolencia();
+              }
+            }
+          }
+          
+          if (dados.encaminhamentosSelecionados && Array.isArray(dados.encaminhamentosSelecionados)) {
+            if (typeof encaminhamentosSelecionados !== 'undefined') {
+              encaminhamentosSelecionados = [...dados.encaminhamentosSelecionados];
+              if (typeof renderizarTags === 'function') {
+                renderizarTags();
+              }
+            }
+          }
+          
+          // Restaurar tags a partir de strings (campos hidden)
+          if (dados.pcdDetalhes) {
+            this.recriarTags('pcdDetalhes', dados.pcdDetalhes);
+          }
+          if (dados.tipoViolencia) {
+            this.recriarTags('tipoViolencia', dados.tipoViolencia);
+          }
+          if (dados.classificacaoViolencia) {
+            this.recriarTags('classificacaoViolencia', dados.classificacaoViolencia);
+          }
+          if (dados.motivacaoViolencia) {
+            this.recriarTags('motivacaoViolencia', dados.motivacaoViolencia);
+          }
+          if (dados.encaminhamento) {
+            this.recriarTags('encaminhamento', dados.encaminhamento);
+          }
+          
+          // Atualizar progresso
+          if (typeof atualizarProgresso === 'function') {
+            atualizarProgresso();
+          }
+        }, 300);
+      },
+      
+      // Recriar tags visuais a partir de string salva
+      recriarTags(campoId, valorString) {
+        if (!valorString) return;
+        
+        // Separa por vírgula e limpa espaços
+        const valores = valorString.split(',').map(v => v.trim()).filter(v => v);
+        
+        // Determinar qual sistema de tags usar baseado no ID
+        let funcaoAdicionar;
+        if (campoId === 'pcdDetalhes') {
+          funcaoAdicionar = window.adicionarTranstorno;
+        } else if (campoId === 'tipoViolencia') {
+          funcaoAdicionar = window.adicionarTipoViolencia;
+        } else if (campoId === 'classificacaoViolencia') {
+          funcaoAdicionar = window.adicionarClassificacaoViolencia;
+        } else if (campoId === 'motivacaoViolencia') {
+          funcaoAdicionar = window.adicionarMotivacaoViolencia;
+        } else if (campoId === 'encaminhamento') {
+          funcaoAdicionar = window.adicionarEncaminhamento;
+        }
+        
+        if (funcaoAdicionar) {
+          valores.forEach(valor => {
+            try {
+              funcaoAdicionar(valor);
+            } catch (e) {
+              console.warn('⚠️ Erro ao recriar tag', valor, ':', e);
+            }
+          });
+        }
+      },
+      
+      // Observar mudanças nos sistemas de tags
+      observarMudancasTags() {
+        // Observar mudanças nos campos hidden de tags
+        ['pcdDetalhes', 'tipoViolencia', 'classificacaoViolencia', 'motivacaoViolencia', 'encaminhamento'].forEach(id => {
+          const campo = document.getElementById(id);
+          if (campo) {
+            // Usar MutationObserver para detectar mudanças no value
+            const observer = new MutationObserver(() => this.salvar());
+            observer.observe(campo, { attributes: true, attributeFilter: ['value'] });
+            
+            // Também observar mudanças diretas
+            campo.addEventListener('change', () => this.salvar());
+            
+            // Observar mudanças no input event também
+            const inputCampo = document.getElementById(id + '-input');
+            if (inputCampo) {
+              inputCampo.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                  setTimeout(() => this.salvar(), 100);
+                }
+              });
+            }
+          }
+        });
+      },
+      
+      // Iniciar backup automático
+      iniciarBackupAutomatico() {
+        this.BACKUP_INTERVAL = setInterval(() => {
+          this.salvar();
+          console.log('⏰ Backup automático executado');
+        }, this.BACKUP_DELAY);
+      },
+      
+      // Atualizar indicador visual de salvamento
+      atualizarIndicadorSalvamento(data) {
+        const indicador = document.getElementById('indicadorRascunho');
+        if (!indicador) return;
+        
+        const tempo = this.formatarTempoRelativo(data);
+        indicador.innerHTML = `
+          <span class="text-xs text-green-600 flex items-center gap-1">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            Rascunho salvo ${tempo}
+          </span>
+        `;
+        indicador.classList.remove('hidden');
+      },
+      
+      // Mostrar notificação discreta de rascunho carregado
+      mostrarNotificacaoRascunho(timestamp) {
+        const tempo = this.formatarTempoRelativo(new Date(timestamp));
+        
+        if (typeof mostrarAlerta === 'function') {
+          mostrarAlerta(`📂 Rascunho recuperado (salvo ${tempo})`, 'info');
+        }
+      },
+      
+      // Formatar tempo relativo (ex: "há 2 minutos")
+      formatarTempoRelativo(data) {
+        const agora = new Date();
+        const diff = agora - data;
+        const segundos = Math.floor(diff / 1000);
+        const minutos = Math.floor(segundos / 60);
+        const horas = Math.floor(minutos / 60);
+        const dias = Math.floor(horas / 24);
+        
+        if (segundos < 60) return 'agora há pouco';
+        if (minutos < 60) return `há ${minutos} minuto${minutos > 1 ? 's' : ''}`;
+        if (horas < 24) return `há ${horas} hora${horas > 1 ? 's' : ''}`;
+        if (dias < 7) return `há ${dias} dia${dias > 1 ? 's' : ''}`;
+        return `em ${data.toLocaleDateString('pt-BR')}`;
+      },
+      
+      // Limpar rascunho
+      limpar() {
+        localStorage.removeItem(this.CHAVE_STORAGE);
+        console.log('🗑️ Rascunho limpo');
+        
+        const indicador = document.getElementById('indicadorRascunho');
+        if (indicador) {
+          indicador.classList.add('hidden');
+        }
+        
+        // Atualizar status antigo também (compatibilidade)
+        if (typeof atualizarStatusRascunho === 'function') {
+          atualizarStatusRascunho(false);
+        }
+      },
+      
+      // Parar backup automático (ao sair da página)
+      parar() {
+        if (this.BACKUP_INTERVAL) {
+          clearInterval(this.BACKUP_INTERVAL);
+          this.BACKUP_INTERVAL = null;
+        }
+        if (this.DEBOUNCE_TIMEOUT) {
+          clearTimeout(this.DEBOUNCE_TIMEOUT);
+          this.DEBOUNCE_TIMEOUT = null;
+        }
+      }
+    };
+    
+    // Funções de compatibilidade (manter para não quebrar código existente)
+    function salvarRascunho() {
+      AutoSave.salvar();
+    }
+    
+    function limparRascunho() {
+      AutoSave.limpar();
+    }
+    
+    function carregarRascunho() {
+      AutoSave.carregarRascunho();
+    }
+    
+    // Função de compatibilidade para atualizarStatusRascunho (mantida para compatibilidade)
+    function atualizarStatusRascunho(temRascunho) {
+      if (temRascunho) {
+        try {
+          const rascunhoStr = localStorage.getItem(AutoSave.CHAVE_STORAGE);
+          if (rascunhoStr) {
+            const rascunho = JSON.parse(rascunhoStr);
+            const draftStatus = document.getElementById('draftStatus');
+            const draftLastSave = document.getElementById('draftLastSave');
+            if (draftStatus) draftStatus.classList.remove('hidden');
+            if (draftLastSave) draftLastSave.textContent = `Salvo: ${new Date(rascunho.timestamp).toLocaleString('pt-BR')}`;
+          }
+        } catch (e) {
+          const draftStatus = document.getElementById('draftStatus');
+          if (draftStatus) draftStatus.classList.add('hidden');
+        }
+      } else {
+        const draftStatus = document.getElementById('draftStatus');
+        if (draftStatus) draftStatus.classList.add('hidden');
+      }
+    }
+    
+    // ========================================
+    // INDICADOR DE PROGRESSO
+    // ========================================
+    function calcularProgresso() {
+      const form = document.getElementById('registroForm');
+      const camposObrigatorios = form.querySelectorAll('[required]');
+      
+      // Agrupa radio buttons por name para evitar contagem duplicada
+      const gruposRadioProcessados = new Set();
+      const camposUnicos = [];
+      
+      camposObrigatorios.forEach(campo => {
+        if (campo.type === 'radio') {
+          if (!gruposRadioProcessados.has(campo.name)) {
+            gruposRadioProcessados.add(campo.name);
+            camposUnicos.push(campo);
+          }
+        } else {
+          camposUnicos.push(campo);
+        }
+      });
+      
+      const totalCampos = camposUnicos.length;
+      let camposPreenchidos = 0;
+      const camposPendentes = [];
+      
+      console.log('📊 Calculando progresso - Total de campos obrigatórios:', totalCampos);
+      
+      camposUnicos.forEach(campo => {
+        let preenchido = false;
+        
+        // Validação especial para campos hidden de tags ANTES da validação padrão
+        // tipoViolencia (sempre obrigatório)
+        if (campo.id === 'tipoViolencia' || campo.name === 'tipoViolencia') {
+          const valorHidden = campo.value && campo.value.trim() !== '';
+          const temArray = typeof tiposViolenciaSelecionados !== 'undefined' && tiposViolenciaSelecionados.length > 0;
+          preenchido = valorHidden || temArray;
+        }
+        // pcdDetalhes (obrigatório apenas se PCD = Sim)
+        else if (campo.id === 'pcdDetalhes' || campo.name === 'pcdDetalhes') {
+          const pcdTranstorno = document.getElementById('pcdTranstorno')?.value || '';
+          if (pcdTranstorno === 'Sim') {
+            const valorHidden = campo.value && campo.value.trim() !== '';
+            const temArray = typeof transtornosSelecionados !== 'undefined' && transtornosSelecionados.length > 0;
+            preenchido = valorHidden || temArray;
+          } else {
+            preenchido = true; // Não é obrigatório se PCD = Não
+          }
+        }
+        // Validação padrão para outros campos
+        else if (campo.type === 'radio') {
+          // Para radio buttons, verifica se ALGUMA opção do grupo está selecionada
+          // (mesmo que seja a opção "Não informado" com value="")
+          const radioGroup = form.querySelectorAll(`input[type="radio"][name="${campo.name}"]`);
+          const algumMarcado = Array.from(radioGroup).some(radio => radio.checked);
+          // Se algum está marcado, considera preenchido (mesmo que seja valor vazio)
+          // Isso é importante para campos como "estudoCaso" que têm opção padrão "Não informado"
+          preenchido = algumMarcado;
+          
+          // Log para debug de radio buttons
+          if (!preenchido && campo.hasAttribute('required')) {
+            console.log('⚠️ Radio button obrigatório não selecionado:', {
+              name: campo.name,
+              grupo: Array.from(radioGroup).map(r => ({ value: r.value, checked: r.checked }))
+            });
+          }
+        } else if (campo.type === 'checkbox') {
+          preenchido = campo.checked;
+        } else if (campo.tagName === 'SELECT') {
+          preenchido = campo.value && campo.value !== '' && campo.value !== 'Selecione...';
+        } else if (campo.type === 'hidden') {
+          // Campos hidden devem ter valor não vazio
+          preenchido = campo.value && campo.value.trim() !== '';
+        } else {
+          preenchido = campo.value && campo.value.trim() !== '';
+        }
+        
+        if (preenchido) {
+          camposPreenchidos++;
+        } else {
+          // Tenta encontrar o label de forma mais robusta
+          let label = '';
+          
+          // Para radio buttons, pega o label do grupo (não da opção específica)
+          if (campo.type === 'radio') {
+            const labelElement = form.querySelector(`label[for="${campo.name}"]`) || 
+                                campo.closest('div')?.querySelector('label:not([for])') ||
+                                campo.closest('fieldset')?.querySelector('legend');
+            if (labelElement) {
+              label = labelElement.textContent || '';
+            }
+          } else {
+            label = campo.getAttribute('aria-label') || 
+                   campo.closest('div')?.querySelector('label')?.textContent || 
+                   campo.closest('label')?.textContent ||
+                   campo.name || 
+                   campo.id || 
+                   'Campo';
+          }
+          
+          // Limpa o label: remove asteriscos, checkmarks, e espaços extras
+          label = label.replace(/\*/g, '')
+                      .replace(/[✓✔]/g, '')
+                      .replace(/\s+/g, ' ')
+                      .trim();
+          
+          // Se ainda não tem label útil, usa o name ou id
+          if (!label || label.length < 2) {
+            label = campo.name || campo.id || 'Campo';
+          }
+          
+          if (label && !camposPendentes.includes(label)) {
+            camposPendentes.push(label);
+            console.log('⚠️ Campo pendente detectado:', {
+              id: campo.id,
+              name: campo.name,
+              type: campo.type,
+              value: campo.value,
+              label: label
+            });
+          }
+        }
+      });
+      
+      console.log('📊 Progresso calculado:', {
+        preenchidos: camposPreenchidos,
+        total: totalCampos,
+        percentual: Math.round((camposPreenchidos / totalCampos) * 100),
+        pendentes: camposPendentes
+      });
+      
+      const percentual = totalCampos > 0 ? Math.round((camposPreenchidos / totalCampos) * 100) : 0;
+      
+      return {
+        percentual,
+        camposPreenchidos,
+        totalCampos,
+        camposPendentes: camposPendentes.slice(0, 5) // Limita a 5 para não poluir a UI
+      };
+    }
+    
+    function atualizarProgresso() {
+      const progressIndicator = document.getElementById('progressIndicator');
+      const progressBar = document.getElementById('progressBar');
+      const progressText = document.getElementById('progressText');
+      const progressDetails = document.getElementById('progressDetails');
+      
+      const progresso = calcularProgresso();
+      
+      // Mostra o indicador se houver algum preenchimento
+      if (progresso.camposPreenchidos > 0 || progresso.percentual > 0) {
+        progressIndicator.classList.remove('hidden');
+      }
+      
+      // Atualiza barra de progresso
+      progressBar.style.width = `${progresso.percentual}%`;
+      
+      // Atualiza texto
+      progressText.textContent = `${progresso.camposPreenchidos} de ${progresso.totalCampos} campos obrigatórios preenchidos (${progresso.percentual}%)`;
+      
+      // Atualiza detalhes
+      if (progresso.camposPendentes.length > 0) {
+        progressDetails.innerHTML = `
+          <span class="font-semibold text-gray-700">Pendentes:</span>
+          <span class="text-gray-600">${progresso.camposPendentes.join(', ')}${progresso.camposPendentes.length >= 5 ? '...' : ''}</span>
+        `;
+      } else if (progresso.percentual === 100) {
+        progressDetails.innerHTML = '<span class="text-green-600 font-semibold">✅ Todos os campos obrigatórios preenchidos!</span>';
+      } else {
+        progressDetails.innerHTML = '';
+      }
+      
+      // Muda cor da barra baseado no progresso
+      if (progresso.percentual === 100) {
+        progressBar.className = 'bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 h-full rounded-full transition-all duration-500 ease-out shadow-sm';
+      } else if (progresso.percentual >= 75) {
+        progressBar.className = 'bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 h-full rounded-full transition-all duration-500 ease-out shadow-sm';
+      } else if (progresso.percentual >= 50) {
+        progressBar.className = 'bg-gradient-to-r from-yellow-500 via-yellow-600 to-orange-600 h-full rounded-full transition-all duration-500 ease-out shadow-sm';
+      } else {
+        progressBar.className = 'bg-gradient-to-r from-red-500 via-red-600 to-pink-600 h-full rounded-full transition-all duration-500 ease-out shadow-sm';
+      }
+    }
+    
+    // ========================================
+    // VALIDAÇÃO INTELIGENTE
+    // ========================================
+    function validarInteligente() {
+      const erros = [];
+      const avisos = [];
+      
+      // 1. Validação de Idade vs Data da Notificação
+      const idade = parseInt(document.getElementById('idade')?.value || '0', 10);
+      const dataNT = document.getElementById('dataNT')?.value;
+      
+      if (dataNT && !isNaN(idade) && idade > 0) {
+        const dataNotificacao = new Date(dataNT);
+        const hoje = new Date();
+        const anoNascimentoEstimado = hoje.getFullYear() - idade;
+        const dataNascimentoEstimada = new Date(anoNascimentoEstimado, hoje.getMonth(), hoje.getDate());
+        const idadeCalculada = Math.floor((hoje - dataNascimentoEstimada) / (365.25 * 24 * 60 * 60 * 1000));
+        
+        if (Math.abs(idadeCalculada - idade) > 1) {
+          avisos.push(`⚠️ A idade informada (${idade} anos) pode estar inconsistente com a data da notificação. Verifique se está correta.`);
+        }
+      }
+      
+      // 2. Validação de Data Futura
+      if (dataNT) {
+        const dataNotificacao = new Date(dataNT);
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        dataNotificacao.setHours(0, 0, 0, 0);
+        
+        if (dataNotificacao > hoje) {
+          erros.push('❌ A data da notificação não pode ser futura. Por favor, corrija a data.');
+          const campoData = document.getElementById('dataNT');
+          if (campoData) {
+            campoData.classList.add('field-error');
+          }
+        }
+      }
+      
+      // 3. Validação de Idade Mínima/Máxima
+      if (!isNaN(idade) && idade > 0) {
+        if (idade < 0 || idade > 120) {
+          erros.push('❌ A idade deve estar entre 0 e 120 anos.');
+          const campoIdade = document.getElementById('idade');
+          if (campoIdade) {
+            campoIdade.classList.add('field-error');
+          }
+        } else if (idade < 3) {
+          avisos.push('⚠️ A idade informada é muito baixa. Verifique se está correta.');
+        } else if (idade > 25) {
+          avisos.push('⚠️ A idade informada é muito alta para um estudante. Verifique se está correta.');
+        }
+      }
+      
+      // 4. Validação de Nome (mínimo de caracteres)
+      const nome = document.getElementById('criancaEstudante')?.value?.trim() || '';
+      if (nome && nome.length < 3) {
+        erros.push('❌ O nome deve ter pelo menos 3 caracteres.');
+        const campoNome = document.getElementById('criancaEstudante');
+        if (campoNome) {
+          campoNome.classList.add('field-error');
+        }
+      } else if (nome && nome.split(' ').length < 2) {
+        avisos.push('⚠️ Recomenda-se informar o nome completo (nome e sobrenome).');
+      }
+      
+      // 5. Validação de Consistência: Ocorreu na Escola
+      const ocorreuEscola = document.getElementById('ocorreuEscola')?.value;
+      const cmeiEmef = document.getElementById('cmeiEmef')?.value?.trim() || '';
+      
+      if (ocorreuEscola === 'Sim' && !cmeiEmef) {
+        avisos.push('⚠️ Se a violência ocorreu na escola, recomenda-se informar a escola.');
+      }
+      
+      // 6. Validação de Consistência: Autor da Violência
+      const profissionalAutor = document.getElementById('profissionalAutor')?.value;
+      const estudanteAutor = document.getElementById('estudanteAutor')?.value;
+      
+      if (profissionalAutor === 'Sim' && estudanteAutor === 'Sim') {
+        avisos.push('⚠️ Verifique: tanto profissional quanto estudante foram marcados como autores. Isso é possível, mas confirme se está correto.');
+      }
+      
+      if (profissionalAutor === 'Não' && estudanteAutor === 'Não' && ocorreuEscola === 'Sim') {
+        avisos.push('⚠️ Se ocorreu na escola mas nenhum profissional nem estudante foi autor, verifique se há outro agente envolvido.');
+      }
+      
+      return { erros, avisos };
+    }
+    
+    // Função de validação no frontend (atualizada)
     function validarFormulario() {
       const form = document.getElementById('registroForm');
       const camposObrigatorios = form.querySelectorAll('[required]');
@@ -2416,25 +3565,65 @@
         }
       });
       
+      // Validação especial para tipoViolencia (campo obrigatório de tags)
+      const tipoViolenciaHidden = document.getElementById('tipoViolencia');
+      const tipoViolenciaTagsContainer = document.getElementById('tipoViolencia-tags');
+      if (tipoViolenciaHidden && tipoViolenciaHidden.hasAttribute('required')) {
+        const tipoViolenciaValue = tipoViolenciaHidden.value || '';
+        const temTiposViolencia = (typeof tiposViolenciaSelecionados !== 'undefined' && tiposViolenciaSelecionados.length > 0) || tipoViolenciaValue.trim() !== '';
+        
+        if (!temTiposViolencia) {
+          if (tipoViolenciaTagsContainer) {
+            tipoViolenciaTagsContainer.classList.add('field-error');
+          }
+          valido = false;
+          mostrarAlerta('❌ Por favor, adicione pelo menos um tipo de violência.', 'error');
+        } else {
+          if (tipoViolenciaTagsContainer) {
+            tipoViolenciaTagsContainer.classList.remove('field-error');
+          }
+        }
+      }
+      
       // Validação condicional: se PCD = Sim, então deve ter pelo menos um transtorno selecionado
-      const pcdTranstorno = document.getElementById('pcdTranstorno').value;
+      const pcdTranstorno = document.getElementById('pcdTranstorno')?.value || '';
       const pcdDetalhesHidden = document.getElementById('pcdDetalhes');
       const pcdDetalhesTagsContainer = document.getElementById('pcdDetalhes-tags');
       
       if (pcdTranstorno === 'Sim') {
-        if (transtornosSelecionados.length === 0) {
+        const temTranstornos = (typeof transtornosSelecionados !== 'undefined' && transtornosSelecionados.length > 0) || 
+                               (pcdDetalhesHidden && pcdDetalhesHidden.value && pcdDetalhesHidden.value.trim() !== '');
+        
+        if (!temTranstornos) {
           if (pcdDetalhesTagsContainer) {
             pcdDetalhesTagsContainer.classList.add('field-error');
           }
           valido = false;
           mostrarAlerta('Por favor, adicione pelo menos um transtorno/deficiência quando marcar "Sim".', 'error');
-          return valido;
         } else {
           // Remove classe de erro se estava presente
           if (pcdDetalhesTagsContainer) {
             pcdDetalhesTagsContainer.classList.remove('field-error');
           }
         }
+      }
+      
+      // Validação inteligente
+      const validacaoInteligente = validarInteligente();
+      
+      // Mostra erros primeiro
+      if (validacaoInteligente.erros.length > 0) {
+        validacaoInteligente.erros.forEach(erro => {
+          mostrarAlerta(erro, 'error');
+        });
+        valido = false;
+      }
+      
+      // Depois mostra avisos (não bloqueiam o envio)
+      if (validacaoInteligente.avisos.length > 0) {
+        validacaoInteligente.avisos.forEach(aviso => {
+          mostrarAlerta(aviso, 'info');
+        });
       }
       
       if (!valido) {
@@ -2447,13 +3636,104 @@
     // Função para coletar dados do formulário
     function coletarDadosFormulario() {
       const form = document.getElementById('registroForm');
-      const formData = new FormData(form);
+      if (!form) {
+        console.error('Formulário não encontrado!');
+        return {};
+      }
+      
       const dados = {};
       
-      // Converte FormData para objeto
-      for (let [key, value] of formData.entries()) {
-        dados[key] = value;
+      // Coleta todos os campos do formulário
+      form.querySelectorAll('input, select, textarea').forEach(campo => {
+        // Ignora botões e campos de input de tags
+        if (campo.type === 'button' || campo.type === 'submit') return;
+        if (campo.id && (campo.id.includes('-input') || campo.id.includes('-tags'))) return;
+        
+        const name = campo.name || campo.id;
+        if (!name) return;
+        
+        let valor = '';
+        
+        if (campo.type === 'radio') {
+          // Radio buttons - só salva se estiver marcado
+          if (campo.checked) {
+            dados[name] = campo.value;
+          }
+        } else if (campo.type === 'checkbox') {
+          // Checkboxes - só salva se estiver marcado
+          if (campo.checked) {
+            dados[name] = campo.value;
+          }
+        } else if (campo.tagName === 'SELECT') {
+          valor = campo.value || '';
+          if (valor) dados[name] = valor;
+        } else if (campo.type === 'hidden') {
+          // Campos hidden (tags) - são críticos
+          valor = campo.value || '';
+          if (valor) dados[name] = valor;
+        } else {
+          valor = campo.value || '';
+          if (valor && valor.trim() !== '') {
+            dados[name] = valor;
+          }
+        }
+      });
+      
+      // Garante que campos hidden de tags sejam coletados (backup)
+      ['pcdDetalhes', 'tipoViolencia', 'classificacaoViolencia', 'motivacaoViolencia', 'encaminhamento'].forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo && campo.value) {
+          dados[id] = campo.value;
+        }
+      });
+      
+      // Se campos hidden de tags estiverem vazios mas arrays tiverem valores, preenche
+      if (!dados.tipoViolencia || dados.tipoViolencia.trim() === '') {
+        if (typeof tiposViolenciaSelecionados !== 'undefined' && tiposViolenciaSelecionados.length > 0) {
+          dados.tipoViolencia = tiposViolenciaSelecionados.join(', ');
+          console.log('📝 tipoViolencia preenchido a partir do array:', dados.tipoViolencia);
+        }
       }
+      if (!dados.classificacaoViolencia || dados.classificacaoViolencia.trim() === '') {
+        if (typeof classificacoesSelecionadas !== 'undefined' && classificacoesSelecionadas.length > 0) {
+          dados.classificacaoViolencia = classificacoesSelecionadas.join(', ');
+        }
+      }
+      if (!dados.motivacaoViolencia || dados.motivacaoViolencia.trim() === '') {
+        if (typeof motivacoesSelecionadas !== 'undefined' && motivacoesSelecionadas.length > 0) {
+          dados.motivacaoViolencia = motivacoesSelecionadas.join(', ');
+        }
+      }
+      if (!dados.encaminhamento || dados.encaminhamento.trim() === '') {
+        if (typeof encaminhamentosSelecionados !== 'undefined' && encaminhamentosSelecionados.length > 0) {
+          dados.encaminhamento = encaminhamentosSelecionados.join(', ');
+        }
+      }
+      if (!dados.pcdDetalhes || dados.pcdDetalhes.trim() === '') {
+        if (typeof transtornosSelecionados !== 'undefined' && transtornosSelecionados.length > 0) {
+          dados.pcdDetalhes = transtornosSelecionados.join(', ');
+        }
+      }
+      
+      // Log detalhado dos campos obrigatórios
+      const camposObrigatorios = ['criancaEstudante', 'dataNT', 'idade', 'identidadeGenero', 'tipoViolencia', 'cmeiEmef', 'regiao', 'responsavelRegistro'];
+      console.log('📋 Status dos campos obrigatórios:');
+      camposObrigatorios.forEach(campo => {
+        const valor = dados[campo];
+        const status = valor && valor.toString().trim() !== '' ? '✅' : '❌';
+        console.log(`  ${status} ${campo}:`, valor || '(vazio)');
+      });
+      
+      // Converte valores Sim/Não para S/N conforme necessário
+      const camposSimNao = ['fonteEscola', 'violenciaEscolaOcorreu', 'profissionalAutor', 'estudanteAutor', 
+                            'violenciaNaoEscola', 'ocorreuEscola', 'violenciaInformada', 'estudoCaso'];
+      camposSimNao.forEach(campo => {
+        if (dados[campo] !== undefined) {
+          dados[campo] = converterSimNao(dados[campo]);
+        }
+      });
+      
+      console.log('📤 Dados coletados para envio:', Object.keys(dados));
       
       return dados;
     }
@@ -2462,20 +3742,40 @@
     document.getElementById('registroForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
+      console.log('📝 Iniciando envio do formulário...');
+      
       // Valida antes de enviar
-      if (!validarFormulario()) {
+      const validacao = validarFormulario();
+      console.log('✅ Validação retornou:', validacao);
+      
+      if (!validacao) {
+        console.warn('❌ Validação falhou, não enviando formulário');
         return;
       }
       
       // Coleta os dados
       const dados = coletarDadosFormulario();
+      console.log('📦 Dados coletados:', dados);
+      
+      // Verifica se há dados para enviar
+      if (Object.keys(dados).length === 0) {
+        console.error('❌ Nenhum dado coletado!');
+        mostrarAlerta('❌ Erro: Nenhum dado foi coletado do formulário. Por favor, recarregue a página e tente novamente.', 'error');
+        return;
+      }
       
       // Desabilita botão durante envio
       const btnSalvar = document.getElementById('btnSalvar');
       btnSalvar.disabled = true;
       btnSalvar.textContent = '⏳ Salvando...';
       
-      // Envia para o Apps Script Web App via fetch()
+      // Salva rascunho antes de enviar (backup de segurança)
+      if (typeof AutoSave !== 'undefined') {
+        AutoSave.salvar();
+      }
+      
+      // Envia para o Apps Script Web App
+      console.log('🚀 Enviando dados para Apps Script...');
       enviarParaAppsScript(dados);
     });
     
@@ -2483,33 +3783,112 @@
     function enviarParaAppsScript(dados) {
       const btnSalvar = document.getElementById('btnSalvar');
       
-      // Validação de campos obrigatórios
+      console.log('📋 Validando dados antes de enviar:', dados);
+      
+      // Validação de campos obrigatórios (verifica se existem e não estão vazios)
       const camposObrigatorios = [
         'criancaEstudante', 'dataNT', 'idade', 'identidadeGenero',
         'tipoViolencia', 'cmeiEmef', 'regiao', 'responsavelRegistro'
       ];
       
+      const camposFaltando = [];
       for (const campo of camposObrigatorios) {
-        if (!dados[campo] || dados[campo].toString().trim() === '') {
-          btnSalvar.disabled = false;
-          btnSalvar.textContent = '💾 Salvar Registro';
-          mostrarAlerta('❌ Preencha todos os campos obrigatórios!', 'error');
-          return;
+        const valor = dados[campo];
+        if (!valor || (typeof valor === 'string' && valor.trim() === '')) {
+          camposFaltando.push(campo);
         }
       }
+      
+      if (camposFaltando.length > 0) {
+        console.error('❌ Campos obrigatórios faltando:', camposFaltando);
+        btnSalvar.disabled = false;
+        btnSalvar.textContent = '💾 Salvar Registro';
+        mostrarAlerta(`❌ Preencha todos os campos obrigatórios! Faltando: ${camposFaltando.join(', ')}`, 'error');
+        return;
+      }
+      
+      console.log('✅ Todos os campos obrigatórios preenchidos');
+      
+      // Verifica se a URL do Apps Script está configurada
+      // Tenta obter do CONFIG novamente caso não tenha sido carregada antes
+      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('SEU_ID_AQUI')) {
+        // Usa window.CONFIG diretamente (não pode reatribuir const)
+        const config = typeof window !== 'undefined' ? window.CONFIG : (typeof CONFIG !== 'undefined' ? CONFIG : null);
+        
+        if (config && config.APPS_SCRIPT_CASOS) {
+          const novaURL = config.APPS_SCRIPT_CASOS;
+          
+          // Verifica se a URL mudou (pode estar em cache)
+          if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== novaURL) {
+            console.warn('⚠️ URL do Apps Script mudou! Atualizando...');
+            console.warn('URL antiga:', APPS_SCRIPT_URL);
+            console.warn('URL nova:', novaURL);
+          }
+          
+          APPS_SCRIPT_URL = novaURL;
+          console.log('✅ URL obtida do CONFIG:', APPS_SCRIPT_URL);
+        } else {
+          console.error('❌ CONFIG.APPS_SCRIPT_CASOS não está disponível');
+          console.error('CONFIG disponível?', typeof config !== 'undefined' && config !== null);
+          if (config) {
+            console.error('CONFIG.APPS_SCRIPT_CASOS:', config.APPS_SCRIPT_CASOS);
+          }
+        }
+      }
+      
+      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('SEU_ID_AQUI')) {
+        console.error('❌ ERRO: URL do Apps Script não configurada!');
+        console.error('CONFIG disponível?', typeof CONFIG !== 'undefined');
+        if (typeof CONFIG !== 'undefined') {
+          console.error('CONFIG completo:', CONFIG);
+          console.error('CONFIG.APPS_SCRIPT_CASOS:', CONFIG.APPS_SCRIPT_CASOS);
+        } else {
+          console.error('⚠️ CONFIG não está definido. Verifique se config.js está sendo carregado corretamente.');
+        }
+        btnSalvar.disabled = false;
+        btnSalvar.textContent = '💾 Salvar Registro';
+        mostrarAlerta('❌ Erro: URL do Apps Script não está configurada. Verifique o arquivo config.js e certifique-se de que APPS_SCRIPT_CASOS está definido. Recarregue a página após configurar.', 'error');
+        return;
+      }
+      
+      console.log('📡 Enviando para URL:', APPS_SCRIPT_URL);
       
       // Cria callback global para receber resposta do Apps Script
       const callbackName = 'handleScriptResponse_' + Date.now();
       window[callbackName] = function(resultado) {
+        console.log('📥 Resposta recebida do Apps Script:', resultado);
+        console.log('✅ Callback executado com sucesso');
+        
         btnSalvar.disabled = false;
         btnSalvar.textContent = '💾 Salvar Registro';
         
-        if (resultado.success) {
+        // Verifica se resultado existe
+        if (!resultado) {
+          console.error('❌ Resposta vazia ou inválida do Apps Script');
+          mostrarAlerta('❌ Erro: Resposta inválida do servidor. Verifique os logs do Apps Script.', 'error');
+          delete window[callbackName];
+          return;
+        }
+        
+        // Verifica sucesso (pode ser 'success' ou 'sucesso')
+        const sucesso = resultado.success || resultado.sucesso;
+        const mensagem = resultado.message || resultado.mensagem || 'Operação concluída';
+        
+        if (sucesso) {
+          console.log('✅ Registro salvo com sucesso!');
           mostrarAlerta('✅ Registro salvo com sucesso na planilha!', 'success');
+          
+          // Limpa o formulário completamente após salvar com sucesso
+          console.log('🧹 Limpando formulário após salvamento bem-sucedido...');
           limparFormulario();
+          
+          // Scroll suave para o topo
           window.scrollTo({ top: 0, behavior: 'smooth' });
+          
+          console.log('✅ Formulário limpo e pronto para novo registro!');
         } else {
-          mostrarAlerta('❌ Erro: ' + (resultado.message || 'Falha ao salvar'), 'error');
+          console.error('❌ Erro ao salvar:', mensagem);
+          mostrarAlerta('❌ Erro: ' + mensagem, 'error');
         }
         
         // Limpa o callback
@@ -2523,17 +3902,51 @@
       params.append('data', JSON.stringify(dados));
       params.append('callback', callbackName);
       
-      script.src = APPS_SCRIPT_URL + '?' + params.toString();
-      script.onerror = function() {
+      const urlCompleta = APPS_SCRIPT_URL + '?' + params.toString();
+      console.log('🔗 URL completa da requisição:', urlCompleta);
+      
+      script.src = urlCompleta;
+      script.onerror = function(error) {
+        console.error('❌ Erro ao carregar script do Apps Script:', error);
+        console.error('URL tentada:', urlCompleta);
+        console.error('Possíveis causas:');
+        console.error('1. Apps Script não está publicado como "Aplicativo da Web"');
+        console.error('2. Permissões do Apps Script não estão configuradas corretamente');
+        console.error('3. URL do Apps Script está incorreta');
+        console.error('4. CORS ou bloqueio de rede');
+        
         btnSalvar.disabled = false;
         btnSalvar.textContent = '💾 Salvar Registro';
-        mostrarAlerta('❌ Erro ao conectar com o servidor. Verifique sua conexão.', 'error');
+        mostrarAlerta('❌ Erro ao conectar com o servidor. Verifique: 1) Se o Apps Script está publicado como "Aplicativo da Web", 2) Se a URL em config.js está correta, 3) Se as permissões estão configuradas. Veja o console para mais detalhes.', 'error');
         delete window[callbackName];
       };
       
+      script.onload = function() {
+        console.log('✅ Script do Apps Script carregado com sucesso');
+        console.log('⏳ Aguardando resposta do callback...');
+      };
+      
+      console.log('📤 Adicionando script ao DOM para enviar dados...');
       document.body.appendChild(script);
+      
+      // Timeout de segurança: se não receber resposta em 30 segundos, considera erro
+      setTimeout(() => {
+        if (window[callbackName]) {
+          console.error('⏱️ Timeout: Não recebeu resposta do Apps Script em 30 segundos');
+          btnSalvar.disabled = false;
+          btnSalvar.textContent = '💾 Salvar Registro';
+          mostrarAlerta('❌ Timeout: O servidor não respondeu. Verifique a URL do Apps Script e se o script está publicado corretamente.', 'error');
+          delete window[callbackName];
+        }
+      }, 30000);
+      
       // Remove o script após 5 segundos
-      setTimeout(() => script.remove(), 5000);
+      setTimeout(() => {
+        if (script.parentNode) {
+          script.remove();
+          console.log('🧹 Script removido do DOM');
+        }
+      }, 5000);
     }
     
     // Função para mostrar alertas
@@ -2576,34 +3989,114 @@
     
     // Função para limpar formulário
     function limparFormulario() {
+      console.log('🧹 Limpando formulário...');
       const form = document.getElementById('registroForm');
+      
+      // 1. Reseta o formulário (limpa todos os campos padrão)
       form.reset();
       
-      // Remove classes de erro
+      // 2. Remove classes de erro
       const campos = form.querySelectorAll('.field-error');
       campos.forEach(function(campo) {
         campo.classList.remove('field-error');
       });
       
-      // Reseta os selects customizados
+      // 3. Limpa todos os campos de texto, número e textarea manualmente
+      form.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], textarea').forEach(campo => {
+        campo.value = '';
+      });
+      
+      // 4. Reseta os selects customizados
       document.querySelectorAll('.custom-select-trigger').forEach(trigger => {
         const placeholder = trigger.getAttribute('data-placeholder') || 'Selecione...';
         trigger.textContent = placeholder;
       });
       
-      // Esconde o campo pcdDetalhes
+      // 5. Reseta selects para primeira opção (Selecione...)
+      form.querySelectorAll('select').forEach(select => {
+        select.selectedIndex = 0;
+        // Dispara evento change para atualizar selects customizados
+        select.dispatchEvent(new Event('change'));
+      });
+      
+      // 6. Reseta radio buttons para valores padrão (Não informado quando disponível)
+      form.querySelectorAll('input[type="radio"]').forEach(radio => {
+        // Se houver uma opção com value="" e checked por padrão, seleciona ela
+        const grupo = form.querySelectorAll(`input[type="radio"][name="${radio.name}"]`);
+        grupo.forEach(r => {
+          if (r.value === '' && r.hasAttribute('checked')) {
+            r.checked = true;
+          } else {
+            r.checked = false;
+          }
+        });
+      });
+      
+      // 7. Esconde campos condicionais
       const pcdDetalhesContainer = document.getElementById('pcdDetalhesContainer');
       if (pcdDetalhesContainer) {
         pcdDetalhesContainer.classList.add('hidden');
       }
       
-      // Limpa transtornos selecionados
-      transtornosSelecionados = [];
-      renderizarTagsTranstornos();
+      // 8. Limpa campos hidden de tags
+      ['pcdDetalhes', 'tipoViolencia', 'classificacaoViolencia', 'motivacaoViolencia', 'encaminhamento'].forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+          campo.value = '';
+        }
+      });
       
-      // Limpa encaminhamentos selecionados
-      encaminhamentosSelecionados = [];
-      renderizarTags();
+      // 9. Limpa arrays de tags e renderiza novamente
+      if (typeof transtornosSelecionados !== 'undefined') {
+        transtornosSelecionados = [];
+        if (typeof renderizarTagsTranstornos === 'function') {
+          renderizarTagsTranstornos();
+        }
+      }
+      if (typeof tiposViolenciaSelecionados !== 'undefined') {
+        tiposViolenciaSelecionados = [];
+        if (typeof renderizarTagsTipoViolencia === 'function') {
+          renderizarTagsTipoViolencia();
+        }
+      }
+      if (typeof classificacoesSelecionadas !== 'undefined') {
+        classificacoesSelecionadas = [];
+        if (typeof renderizarTagsClassificacaoViolencia === 'function') {
+          renderizarTagsClassificacaoViolencia();
+        }
+      }
+      if (typeof motivacoesSelecionadas !== 'undefined') {
+        motivacoesSelecionadas = [];
+        if (typeof renderizarTagsMotivacaoViolencia === 'function') {
+          renderizarTagsMotivacaoViolencia();
+        }
+      }
+      if (typeof encaminhamentosSelecionados !== 'undefined') {
+        encaminhamentosSelecionados = [];
+        if (typeof renderizarTags === 'function') {
+          renderizarTags();
+        }
+      }
+      
+      // 10. Limpa inputs de tags visuais
+      form.querySelectorAll('input[id$="-input"]').forEach(input => {
+        input.value = '';
+      });
+      
+      // 11. Limpa containers de tags
+      form.querySelectorAll('[id$="-tags"]').forEach(container => {
+        container.innerHTML = '';
+      });
+      
+      // 12. Limpa rascunho do AutoSave
+      if (typeof AutoSave !== 'undefined') {
+        AutoSave.limpar();
+      }
+      
+      // 13. Atualiza progresso do formulário
+      atualizarProgresso();
+      
+      console.log('✅ Formulário limpo com sucesso!');
     }
 
     // ========================================
@@ -2750,6 +4243,33 @@
       initCustomSelects();
       observeSelectChanges();
       verificarMenuAdmin();
+      
+      // Inicializa sistema de auto-save
+      AutoSave.inicializar();
+      
+      // Inicializa sistema de progresso
+      const form = document.getElementById('registroForm');
+      if (!form) {
+        console.error('Formulário não encontrado!');
+        return;
+      }
+      
+      // Atualiza progresso quando campos mudam
+      form.addEventListener('input', () => {
+        atualizarProgresso();
+      });
+      
+      form.addEventListener('change', () => {
+        atualizarProgresso();
+      });
+      
+      // Botão de salvar rascunho manualmente (já configurado via onclick no HTML)
+      // Não precisa adicionar listener aqui, já está no HTML
+      
+      // Atualiza progresso inicial
+      setTimeout(() => {
+        atualizarProgresso();
+      }, 1000);
     });
 
     // ========================================
@@ -2762,7 +4282,7 @@
       // Se não estiver autenticado, redireciona para login
       if (!userRole || !userEmail) {
         alert('Acesso negado! Faça login para acessar o sistema.');
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
         return;
       }
     }
@@ -2799,7 +4319,7 @@
     function sair() {
       if (confirm('Deseja realmente sair do sistema?')) {
         sessionStorage.clear();
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
       }
     }
   </script>

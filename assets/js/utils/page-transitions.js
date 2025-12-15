@@ -89,53 +89,84 @@ function setupLinkInterceptors() {
 
 // Intercepta também navegação programática
 (function() {
-  const originalLocationAssign = window.location.assign;
-  const originalLocationReplace = window.location.replace;
-  const originalLocationHref = Object.getPropertyDescriptor(window.location, 'href')?.set;
-
-  window.location.assign = function(url) {
-    if (url && url.endsWith('.html')) {
-      if (document.body) {
-        document.body.classList.add('page-exit');
+  try {
+    const originalLocationAssign = window.location.assign;
+    const originalLocationReplace = window.location.replace;
+    
+    // Tenta obter o descriptor de href de forma compatível
+    let originalLocationHrefSetter = null;
+    try {
+      const descriptor = Object.getOwnPropertyDescriptor(window.location, 'href');
+      if (descriptor && descriptor.set) {
+        originalLocationHrefSetter = descriptor.set;
       }
-      setTimeout(() => {
-        originalLocationAssign.call(window.location, url);
-      }, 400);
-    } else {
-      originalLocationAssign.call(window.location, url);
+    } catch (e) {
+      // Se getOwnPropertyDescriptor não funcionar, tenta outra abordagem
+      console.warn('⚠️ Não foi possível interceptar window.location.href:', e);
     }
-  };
 
-  window.location.replace = function(url) {
-    if (url && url.endsWith('.html')) {
-      if (document.body) {
-        document.body.classList.add('page-exit');
-      }
-      setTimeout(() => {
-        originalLocationReplace.call(window.location, url);
-      }, 400);
-    } else {
-      originalLocationReplace.call(window.location, url);
-    }
-  };
-
-  if (originalLocationHref) {
-    Object.defineProperty(window.location, 'href', {
-      set: function(url) {
-        if (url && url.endsWith('.html')) {
-          if (document.body) {
-            document.body.classList.add('page-exit');
-          }
-          setTimeout(() => {
-            originalLocationHref.call(window.location, url);
-          }, 400);
-        } else {
-          originalLocationHref.call(window.location, url);
+    window.location.assign = function(url) {
+      if (url && url.endsWith('.html')) {
+        if (document.body) {
+          document.body.classList.add('page-exit');
         }
-      },
-      get: function() {
-        return window.location.href;
+        setTimeout(() => {
+          originalLocationAssign.call(window.location, url);
+        }, 400);
+      } else {
+        originalLocationAssign.call(window.location, url);
       }
-    });
+    };
+
+    window.location.replace = function(url) {
+      if (url && url.endsWith('.html')) {
+        if (document.body) {
+          document.body.classList.add('page-exit');
+        }
+        setTimeout(() => {
+          originalLocationReplace.call(window.location, url);
+        }, 400);
+      } else {
+        originalLocationReplace.call(window.location, url);
+      }
+    };
+
+    // Só tenta interceptar href se conseguir obter o setter original
+    // E se a propriedade for configurável
+    if (originalLocationHrefSetter) {
+      try {
+        // Verifica se a propriedade é configurável antes de tentar redefinir
+        const descriptor = Object.getOwnPropertyDescriptor(window.location, 'href');
+        if (descriptor && descriptor.configurable) {
+          Object.defineProperty(window.location, 'href', {
+            set: function(url) {
+              if (url && url.endsWith('.html')) {
+                if (document.body) {
+                  document.body.classList.add('page-exit');
+                }
+                setTimeout(() => {
+                  originalLocationHrefSetter.call(window.location, url);
+                }, 400);
+              } else {
+                originalLocationHrefSetter.call(window.location, url);
+              }
+            },
+            get: function() {
+              return window.location.href;
+            },
+            configurable: true
+          });
+        } else {
+          // Se não for configurável, apenas loga um aviso (não é crítico)
+          console.log('ℹ️ window.location.href não é configurável, usando fallback');
+        }
+      } catch (e) {
+        // Não é crítico se não conseguir interceptar href
+        // O sistema ainda funciona, apenas sem transição para navegação programática
+        console.log('ℹ️ Não foi possível interceptar window.location.href (não crítico):', e.message);
+      }
+    }
+  } catch (e) {
+    console.warn('⚠️ Erro ao configurar interceptação de navegação:', e);
   }
 })();

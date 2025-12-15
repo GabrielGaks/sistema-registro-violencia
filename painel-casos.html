@@ -25,16 +25,23 @@
   <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- Estilos Elegantes Compartilhados -->
-  <link rel="stylesheet" href="styles-elegant.css">
-  
-  <!-- Sistema de Transições entre Páginas -->
-  <script src="page-transitions.js"></script>
+  <link rel="stylesheet" href="assets/css/styles-elegant.css">
   
   <!-- Configuração Centralizada -->
   <script src="config.js"></script>
+  <script src="assets/js/utils/config-loader.js"></script>
+  
+  <!-- Sistema de Transições entre Páginas -->
+  <script src="assets/js/utils/page-transitions.js"></script>
+  
+  <!-- Dashboard e Estatísticas (arquivo separado para evitar HTML muito longo) -->
+  <script src="assets/js/modules/dashboard-stats.js"></script>
   
   <!-- Biblioteca para gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  
+  <!-- Biblioteca para gerar PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   
   <style>
     .fade-in {
@@ -845,9 +852,131 @@
         <button id="btnLimparFiltros" class="btn-elegant btn-secondary-elegant px-4 py-2 rounded-md font-medium">
           🔄 Limpar Filtros
         </button>
-        <button id="btnExportarFiltrados" class="btn-elegant px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-md font-medium">
-          📥 Exportar Filtrados (CSV)
+        <button id="btnExportarCSV" class="btn-elegant px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-md font-medium">
+          📥 Exportar CSV
         </button>
+        <button id="btnExportarExcel" class="btn-elegant px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-md font-medium">
+          📊 Exportar Excel
+        </button>
+        <button id="btnExportarPDF" class="btn-elegant px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-md font-medium">
+          📄 Exportar PDF
+        </button>
+      </div>
+    </section>
+
+    <!-- DASHBOARD EXECUTIVO -->
+    <section id="dashboardExecutivo" class="card-elegant bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl shadow-xl p-6 mb-6 hidden fade-in border-2 border-blue-200">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
+          <span class="text-4xl animate-float">📊</span>
+          <span>Dashboard Executivo</span>
+        </h2>
+        <button id="btnAtualizarKPIs" class="btn-elegant btn-primary-elegant px-4 py-2 rounded-lg text-sm font-semibold">
+          🔄 Atualizar
+        </button>
+      </div>
+      
+      <!-- KPIs Principais -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="card-elegant bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium opacity-90">Total de Casos</span>
+            <span class="text-2xl">📋</span>
+          </div>
+          <div id="kpiTotalCasos" class="text-4xl font-bold mb-1">0</div>
+          <div class="text-xs opacity-75" id="kpiTotalCasosVariacao">-</div>
+        </div>
+        
+        <div class="card-elegant bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-5 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium opacity-90">Casos Filtrados</span>
+            <span class="text-2xl">🔍</span>
+          </div>
+          <div id="kpiCasosFiltrados" class="text-4xl font-bold mb-1">0</div>
+          <div class="text-xs opacity-75" id="kpiCasosFiltradosPercentual">-</div>
+        </div>
+        
+        <div class="card-elegant bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-5 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium opacity-90">Top Escola</span>
+            <span class="text-2xl">🏫</span>
+          </div>
+          <div id="kpiTopEscola" class="text-2xl font-bold mb-1 truncate">-</div>
+          <div class="text-xs opacity-75" id="kpiTopEscolaCasos">-</div>
+        </div>
+        
+        <div class="card-elegant bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-5 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium opacity-90">Tipo Mais Frequente</span>
+            <span class="text-2xl">⚠️</span>
+          </div>
+          <div id="kpiTipoFrequente" class="text-lg font-bold mb-1 truncate">-</div>
+          <div class="text-xs opacity-75" id="kpiTipoFrequenteCasos">-</div>
+        </div>
+      </div>
+      
+      <!-- Análise Estatística e Top 5 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div class="card-elegant bg-white rounded-xl p-5 border-2 border-gray-200 shadow-md">
+          <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <span>📈</span>
+            <span>Estatísticas Descritivas (Idade)</span>
+          </h3>
+          <div class="space-y-3">
+            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+              <span class="text-gray-600 font-medium">Média:</span>
+              <span id="statMediaIdade" class="text-lg font-bold text-blue-600">-</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+              <span class="text-gray-600 font-medium">Mediana:</span>
+              <span id="statMedianaIdade" class="text-lg font-bold text-blue-600">-</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+              <span class="text-gray-600 font-medium">Mínima:</span>
+              <span id="statIdadeMin" class="text-lg font-bold text-green-600">-</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+              <span class="text-gray-600 font-medium">Máxima:</span>
+              <span id="statIdadeMax" class="text-lg font-bold text-red-600">-</span>
+            </div>
+            <div class="flex justify-between items-center py-2">
+              <span class="text-gray-600 font-medium">Desvio Padrão:</span>
+              <span id="statDesvioPadrao" class="text-lg font-bold text-purple-600">-</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card-elegant bg-white rounded-xl p-5 border-2 border-gray-200 shadow-md">
+          <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <span>🏆</span>
+            <span>Top 5 Escolas</span>
+          </h3>
+          <div id="top5Escolas" class="space-y-2">
+            <div class="text-gray-400 text-center py-4">Carregando...</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Análise Temporal -->
+      <div class="card-elegant bg-white rounded-xl p-5 border-2 border-gray-200 shadow-md">
+        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <span>📅</span>
+          <span>Análise Temporal</span>
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+            <div class="text-sm text-gray-600 mb-1">Casos Este Mês</div>
+            <div id="statCasosEsteMes" class="text-3xl font-bold text-blue-700">0</div>
+          </div>
+          <div class="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+            <div class="text-sm text-gray-600 mb-1">Casos Mês Anterior</div>
+            <div id="statCasosMesAnterior" class="text-3xl font-bold text-green-700">0</div>
+          </div>
+          <div class="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+            <div class="text-sm text-gray-600 mb-1">Variação</div>
+            <div id="statVariacaoMensal" class="text-3xl font-bold text-purple-700">0%</div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -976,6 +1105,39 @@
           </div>
         </div>
         
+        <!-- Gráfico: Correlação Tipo de Violência vs Faixa Etária -->
+        <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-5 border-2 border-indigo-200 shadow-lg hover:shadow-xl transition-all duration-300 card-hover lg:col-span-2">
+          <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <span class="text-2xl">🔗</span>
+            <span>Correlação: Tipo de Violência vs Faixa Etária</span>
+          </h3>
+          <div class="relative" style="height: 350px;">
+            <canvas id="chartCorrelacaoTipoIdade"></canvas>
+          </div>
+        </div>
+        
+        <!-- Gráfico: Comparativo Temporal (Últimos 6 Meses vs Período Anterior) -->
+        <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border-2 border-amber-200 shadow-lg hover:shadow-xl transition-all duration-300 card-hover lg:col-span-2">
+          <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <span class="text-2xl">📊</span>
+            <span>Comparativo Temporal: Últimos 6 Meses vs Período Anterior</span>
+          </h3>
+          <div class="relative" style="height: 350px;">
+            <canvas id="chartComparativoTemporal"></canvas>
+          </div>
+        </div>
+        
+        <!-- Gráfico: Tendência Anual (Comparação Ano Atual vs Ano Anterior) -->
+        <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-5 border-2 border-teal-200 shadow-lg hover:shadow-xl transition-all duration-300 card-hover lg:col-span-2">
+          <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <span class="text-2xl">📈</span>
+            <span>Tendência Anual: Comparação Mês a Mês</span>
+          </h3>
+          <div class="relative" style="height: 350px;">
+            <canvas id="chartTendenciaAnual"></canvas>
+          </div>
+        </div>
+        
       </div>
     </section>
 
@@ -1077,6 +1239,11 @@
     let filteredData = [];
     let columnNames = {};
     let charts = {}; // Armazena instâncias dos gráficos
+    
+    // Expõe variáveis globalmente para dashboard-stats.js
+    window.originalData = originalData;
+    window.filteredData = filteredData;
+    window.columnNames = columnNames;
     
     // Variáveis de paginação (frontend-only)
     let paginaAtual = 1;
@@ -1991,6 +2158,17 @@ Zilda Andrade,ZA`;
       document.getElementById('btnUltimaPagina').addEventListener('click', () => irParaPagina(totalPaginas));
       document.getElementById('registrosPorPaginaSelect').addEventListener('change', alterarRegistrosPorPagina);
       
+      // Event listeners de exportação e dashboard
+      const btnExportarCSV = document.getElementById('btnExportarCSV');
+      const btnExportarExcel = document.getElementById('btnExportarExcel');
+      const btnExportarPDF = document.getElementById('btnExportarPDF');
+      const btnAtualizarKPIs = document.getElementById('btnAtualizarKPIs');
+      
+      if (btnExportarCSV) btnExportarCSV.addEventListener('click', exportarCSV);
+      if (btnExportarExcel) btnExportarExcel.addEventListener('click', exportarExcel);
+      if (btnExportarPDF) btnExportarPDF.addEventListener('click', exportarPDF);
+      if (btnAtualizarKPIs) btnAtualizarKPIs.addEventListener('click', atualizarKPIs);
+      
       // Carrega os dados automaticamente ao iniciar
       carregarDadosPlanilha();
     });
@@ -2121,6 +2299,8 @@ Zilda Andrade,ZA`;
           // Limpa dados anteriores
           originalData = [];
           filteredData = [];
+          window.originalData = [];
+          window.filteredData = [];
           
           processLoadedData(data);
           
@@ -2151,6 +2331,10 @@ Zilda Andrade,ZA`;
       
       originalData = data;
       filteredData = [...data];
+      
+      // Atualiza variáveis globais para dashboard-stats.js
+      window.originalData = originalData;
+      window.filteredData = filteredData;
       
       // Mapeia colunas - Atualizado para novo cabeçalho
       columnNames = {
@@ -2296,6 +2480,9 @@ Zilda Andrade,ZA`;
       
       console.log('=== FIM DEBUG ===');
       
+      // Atualiza variáveis globais para dashboard-stats.js
+      window.columnNames = columnNames;
+      
       updateUploadStatus('success', `✅ Arquivo carregado – ${data.length} registros`);
       
       initializeFilters(data);
@@ -2304,6 +2491,7 @@ Zilda Andrade,ZA`;
       document.getElementById('statsSection').classList.remove('hidden');
       document.getElementById('chartsSection').classList.remove('hidden');
       document.getElementById('resultsSection').classList.remove('hidden');
+      document.getElementById('dashboardExecutivo').classList.remove('hidden');
       
       // Resetar para primeira página ao carregar dados
       paginaAtual = 1;
@@ -2311,6 +2499,13 @@ Zilda Andrade,ZA`;
       renderStats(filteredData);
       renderCharts(filteredData);
       renderTable(filteredData);
+      
+      // Atualiza KPIs do Dashboard Executivo
+      setTimeout(() => {
+        if (typeof atualizarKPIs === 'function') {
+          atualizarKPIs();
+        }
+      }, 500);
     }
 
     function updateUploadStatus(type, message) {
@@ -2429,7 +2624,7 @@ Zilda Andrade,ZA`;
       }
       
       document.getElementById('btnLimparFiltros').addEventListener('click', clearFilters);
-      document.getElementById('btnExportarFiltrados').addEventListener('click', exportarCSV);
+      // Event listeners de exportação já estão configurados no window.addEventListener('load')
     }
 
     function populateSelect(selectId, options) {
@@ -2760,12 +2955,22 @@ Zilda Andrade,ZA`;
         return true;
       });
 
+      // Atualiza variável global para dashboard-stats.js
+      window.filteredData = filteredData;
+      
       // Resetar para primeira página ao aplicar filtros
       paginaAtual = 1;
 
       renderStats(filteredData);
       renderCharts(filteredData);
       renderTable(filteredData);
+      
+      // Atualiza KPIs após aplicar filtros
+      setTimeout(() => {
+        if (typeof atualizarKPIs === 'function') {
+          atualizarKPIs();
+        }
+      }, 300);
     }
 
     function clearFilters() {
@@ -2815,12 +3020,22 @@ Zilda Andrade,ZA`;
       
       filteredData = [...originalData];
       
+      // Atualiza variável global para dashboard-stats.js
+      window.filteredData = filteredData;
+      
       // Resetar para primeira página ao limpar filtros
       paginaAtual = 1;
       
       renderStats(filteredData);
       renderCharts(filteredData);
       renderTable(filteredData);
+      
+      // Atualiza KPIs após limpar filtros
+      setTimeout(() => {
+        if (typeof atualizarKPIs === 'function') {
+          atualizarKPIs();
+        }
+      }, 300);
     }
 
     // ==============================
@@ -3229,6 +3444,224 @@ Zilda Andrade,ZA`;
           renderPieChart('chartOcorreuEscola', sorted, colors);
         }
       }
+      
+      // Gráfico: Correlação Tipo de Violência vs Faixa Etária
+      if (columnNames.tipo && columnNames.idade) {
+        const faixasEtarias = ['0-5', '6-10', '11-14', '15-17', '18+'];
+        const tiposViolencia = {};
+        const correlacao = {};
+        
+        // Primeiro, identifica todos os tipos de violência
+        data.forEach(row => {
+          const tipo = row[columnNames.tipo];
+          if (tipo) {
+            const tipoNorm = normalizeText(String(tipo).trim());
+            if (tipoNorm && !tiposViolencia[tipoNorm]) {
+              tiposViolencia[tipoNorm] = String(tipo).trim();
+            }
+          }
+        });
+        
+        // Cria estrutura de correlação
+        Object.keys(tiposViolencia).forEach(tipoNorm => {
+          correlacao[tipoNorm] = {};
+          faixasEtarias.forEach(faixa => {
+            correlacao[tipoNorm][faixa] = 0;
+          });
+        });
+        
+        // Preenche os dados
+        data.forEach(row => {
+          const tipo = row[columnNames.tipo];
+          const idade = row[columnNames.idade];
+          
+          if (tipo && idade) {
+            const tipoNorm = normalizeText(String(tipo).trim());
+            if (!tipoNorm) return;
+            
+            const idadeNum = parseInt(String(idade).trim(), 10);
+            if (isNaN(idadeNum)) return;
+            
+            let faixa = '18+';
+            if (idadeNum <= 5) faixa = '0-5';
+            else if (idadeNum <= 10) faixa = '6-10';
+            else if (idadeNum <= 14) faixa = '11-14';
+            else if (idadeNum <= 17) faixa = '15-17';
+            
+            if (correlacao[tipoNorm] && correlacao[tipoNorm][faixa] !== undefined) {
+              correlacao[tipoNorm][faixa]++;
+            }
+          }
+        });
+        
+        // Prepara dados para o gráfico (top 5 tipos mais frequentes)
+        const tiposOrdenados = Object.entries(tiposViolencia)
+          .map(([norm, original]) => {
+            const total = faixasEtarias.reduce((sum, faixa) => sum + (correlacao[norm]?.[faixa] || 0), 0);
+            return { norm, original, total };
+          })
+          .sort((a, b) => b.total - a.total)
+          .slice(0, 5);
+        
+        if (tiposOrdenados.length > 0) {
+          const datasets = faixasEtarias.map((faixa, idx) => {
+            return {
+              label: faixa + ' anos',
+              data: tiposOrdenados.map(({ norm }) => correlacao[norm]?.[faixa] || 0),
+              backgroundColor: colors[idx % colors.length],
+              borderColor: colors[idx % colors.length].replace('0.8', '1'),
+              borderWidth: 2
+            };
+          });
+          
+          const labels = tiposOrdenados.map(({ original }) => original);
+          renderGroupedBarChart('chartCorrelacaoTipoIdade', labels, datasets);
+        }
+      }
+      
+      // Gráfico: Comparativo Temporal (Últimos 6 Meses vs Período Anterior)
+      if (columnNames.data || columnNames.dataNT) {
+        const dataCol = columnNames.data || columnNames.dataNT;
+        const agora = new Date();
+        const mesAtual = agora.getMonth();
+        const anoAtual = agora.getFullYear();
+        
+        // Últimos 6 meses
+        const ultimos6Meses = {};
+        for (let i = 0; i < 6; i++) {
+          const mes = (mesAtual - i + 12) % 12;
+          const ano = mesAtual - i < 0 ? anoAtual - 1 : anoAtual;
+          const key = `${ano}-${String(mes + 1).padStart(2, '0')}`;
+          ultimos6Meses[key] = { mes, ano, count: 0 };
+        }
+        
+        // Período anterior (meses 7-12 atrás)
+        const periodoAnterior = {};
+        for (let i = 6; i < 12; i++) {
+          const mes = (mesAtual - i + 12) % 12;
+          const ano = mesAtual - i < 0 ? anoAtual - 1 : anoAtual;
+          const key = `${ano}-${String(mes + 1).padStart(2, '0')}`;
+          periodoAnterior[key] = { mes, ano, count: 0 };
+        }
+        
+        // Conta os casos
+        data.forEach(row => {
+          const rawData = row[dataCol];
+          if (!rawData) return;
+          
+          const date = parseDateCell(rawData);
+          if (!date || isNaN(date.getTime())) return;
+          
+          const rowMes = date.getMonth();
+          const rowAno = date.getFullYear();
+          const key = `${rowAno}-${String(rowMes + 1).padStart(2, '0')}`;
+          
+          if (ultimos6Meses[key]) {
+            ultimos6Meses[key].count++;
+          } else if (periodoAnterior[key]) {
+            periodoAnterior[key].count++;
+          }
+        });
+        
+        // Prepara dados para o gráfico
+        const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        const labels = [];
+        const dadosUltimos6 = [];
+        const dadosAnterior = [];
+        
+        // Ordena por data (mais antigo primeiro)
+        const sortedUltimos6 = Object.entries(ultimos6Meses)
+          .sort((a, b) => a[0].localeCompare(b[0]));
+        const sortedAnterior = Object.entries(periodoAnterior)
+          .sort((a, b) => a[0].localeCompare(b[0]));
+        
+        // Cria um mapa do período anterior por mês
+        const anteriorPorMes = {};
+        sortedAnterior.forEach(([key, { mes, count }]) => {
+          anteriorPorMes[mes] = count;
+        });
+        
+        sortedUltimos6.forEach(([key, { mes, count }]) => {
+          labels.push(meses[mes]);
+          dadosUltimos6.push(count);
+          dadosAnterior.push(anteriorPorMes[mes] || 0);
+        });
+        
+        if (labels.length > 0) {
+          // Calcula os períodos reais para as legendas dinâmicas
+          const primeiroMesUltimos6 = sortedUltimos6[0][1].mes;
+          const ultimoMesUltimos6 = sortedUltimos6[sortedUltimos6.length - 1][1].mes;
+          const primeiroAnoUltimos6 = sortedUltimos6[0][1].ano;
+          const ultimoAnoUltimos6 = sortedUltimos6[sortedUltimos6.length - 1][1].ano;
+          
+          const primeiroMesAnterior = sortedAnterior[0][1].mes;
+          const ultimoMesAnterior = sortedAnterior[sortedAnterior.length - 1][1].mes;
+          const primeiroAnoAnterior = sortedAnterior[0][1].ano;
+          const ultimoAnoAnterior = sortedAnterior[sortedAnterior.length - 1][1].ano;
+          
+          // Cria labels dinâmicas
+          let labelUltimos6 = '';
+          let labelAnterior = '';
+          
+          // Se os meses estão no mesmo ano
+          if (primeiroAnoUltimos6 === ultimoAnoUltimos6) {
+            labelUltimos6 = `${meses[primeiroMesUltimos6]}-${meses[ultimoMesUltimos6]} ${ultimoAnoUltimos6}`;
+          } else {
+            labelUltimos6 = `${meses[primeiroMesUltimos6]} ${primeiroAnoUltimos6} - ${meses[ultimoMesUltimos6]} ${ultimoAnoUltimos6}`;
+          }
+          
+          if (primeiroAnoAnterior === ultimoAnoAnterior) {
+            labelAnterior = `${meses[primeiroMesAnterior]}-${meses[ultimoMesAnterior]} ${ultimoAnoAnterior}`;
+          } else {
+            labelAnterior = `${meses[primeiroMesAnterior]} ${primeiroAnoAnterior} - ${meses[ultimoMesAnterior]} ${ultimoAnoAnterior}`;
+          }
+          
+          renderComparativeLineChart('chartComparativoTemporal', labels, dadosUltimos6, dadosAnterior, labelUltimos6, labelAnterior);
+        }
+      }
+      
+      // Gráfico: Tendência Anual (Comparação Ano Atual vs Ano Anterior)
+      if (columnNames.data || columnNames.dataNT) {
+        const dataCol = columnNames.data || columnNames.dataNT;
+        const agora = new Date();
+        const anoAtual = agora.getFullYear();
+        const anoAnterior = anoAtual - 1;
+        
+        const dadosAnoAtual = {};
+        const dadosAnoAnterior = {};
+        
+        // Inicializa todos os meses
+        for (let mes = 0; mes < 12; mes++) {
+          dadosAnoAtual[mes] = 0;
+          dadosAnoAnterior[mes] = 0;
+        }
+        
+        // Conta os casos
+        data.forEach(row => {
+          const rawData = row[dataCol];
+          if (!rawData) return;
+          
+          const date = parseDateCell(rawData);
+          if (!date || isNaN(date.getTime())) return;
+          
+          const rowMes = date.getMonth();
+          const rowAno = date.getFullYear();
+          
+          if (rowAno === anoAtual && dadosAnoAtual[rowMes] !== undefined) {
+            dadosAnoAtual[rowMes]++;
+          } else if (rowAno === anoAnterior && dadosAnoAnterior[rowMes] !== undefined) {
+            dadosAnoAnterior[rowMes]++;
+          }
+        });
+        
+        // Prepara dados para o gráfico
+        const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        const labels = meses;
+        const dadosAtual = Object.values(dadosAnoAtual);
+        const dadosAnterior = Object.values(dadosAnoAnterior);
+        
+        renderComparativeLineChart('chartTendenciaAnual', labels, dadosAtual, dadosAnterior, `Ano ${anoAtual}`, `Ano ${anoAnterior}`);
+      }
     }
     
     // Função para aplicar filtros baseado no clique do gráfico
@@ -3246,7 +3679,9 @@ Zilda Andrade,ZA`;
         'chartEncaminhamento': ['encaminhamento'],
         'chartAutor': ['profissionalAutor', 'estudanteAutor'],
         'chartOcorreuEscola': ['ocorreuEscola'],
-        'chartTemporal': ['data']
+        'chartTemporal': ['data'],
+        'chartComparativoTemporal': ['data'],
+        'chartTendenciaAnual': ['data']
       };
       
       // Limpa checkboxes relacionados
@@ -3279,7 +3714,7 @@ Zilda Andrade,ZA`;
         if (filterIdadeMin) filterIdadeMin.value = '';
         if (filterIdadeMax) filterIdadeMax.value = '';
       }
-      if (tipoGrafico === 'chartTemporal') {
+      if (tipoGrafico === 'chartTemporal' || tipoGrafico === 'chartComparativoTemporal' || tipoGrafico === 'chartTendenciaAnual') {
         const filterDataInicio = document.getElementById('filterDataInicio');
         const filterDataFim = document.getElementById('filterDataFim');
         if (filterDataInicio) filterDataInicio.value = '';
@@ -3519,29 +3954,31 @@ Zilda Andrade,ZA`;
           break;
           
         case 'chartTemporal':
-          // Para gráfico temporal, filtra por mês/ano (formato: "Jan/2024")
-          const temporalMatch = valor.match(/(\w+)\/(\d+)/);
-          if (temporalMatch) {
-            const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-            const mesNome = temporalMatch[1];
-            const ano = temporalMatch[2];
-            const mesNum = meses.indexOf(mesNome) + 1;
-            if (mesNum > 0) {
-              // Define data de início como primeiro dia do mês
-              const dataInicio = `${ano}-${String(mesNum).padStart(2, '0')}-01`;
-              // Define data de fim como último dia do mês
-              const ultimoDia = new Date(parseInt(ano), mesNum, 0).getDate();
-              const dataFim = `${ano}-${String(mesNum).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
-              const filterDataInicio = document.getElementById('filterDataInicio');
-              const filterDataFim = document.getElementById('filterDataFim');
-              if (filterDataInicio) filterDataInicio.value = dataInicio;
-              if (filterDataFim) filterDataFim.value = dataFim;
-              console.log('[Filtro Temporal] Aplicando filtro:', dataInicio, 'até', dataFim);
-            } else {
-              console.error('[Filtro Temporal] Mês não encontrado:', mesNome);
-            }
+        case 'chartComparativoTemporal':
+        case 'chartTendenciaAnual':
+          // Para gráficos temporais, filtra por mês (formato: "Jan", "Fev", etc.)
+          const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+          const mesNome = valor.trim();
+          const mesNum = meses.indexOf(mesNome) + 1;
+          
+          if (mesNum > 0) {
+            const agora = new Date();
+            const anoAtual = agora.getFullYear();
+            
+            // Para gráficos comparativos, filtra pelo mês no ano atual
+            // Define data de início como primeiro dia do mês
+            const dataInicio = `${anoAtual}-${String(mesNum).padStart(2, '0')}-01`;
+            // Define data de fim como último dia do mês
+            const ultimoDia = new Date(anoAtual, mesNum, 0).getDate();
+            const dataFim = `${anoAtual}-${String(mesNum).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+            
+            const filterDataInicio = document.getElementById('filterDataInicio');
+            const filterDataFim = document.getElementById('filterDataFim');
+            if (filterDataInicio) filterDataInicio.value = dataInicio;
+            if (filterDataFim) filterDataFim.value = dataFim;
+            console.log(`[Filtro ${tipoGrafico}] Aplicando filtro para mês ${mesNome}:`, dataInicio, 'até', dataFim);
           } else {
-            console.error('[Filtro Temporal] Formato inválido:', valor);
+            console.error(`[Filtro ${tipoGrafico}] Mês não encontrado:`, mesNome);
           }
           break;
       }
@@ -3630,13 +4067,21 @@ Zilda Andrade,ZA`;
               }
             },
             tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 12,
+              titleFont: { size: 13, weight: 'bold' },
+              bodyFont: { size: 12 },
               callbacks: {
                 label: function(context) {
                   const label = context.label || '';
                   const value = context.parsed || 0;
                   const total = context.dataset.data.reduce((a, b) => a + b, 0);
                   const percentage = ((value / total) * 100).toFixed(1);
-                  return `${label}: ${value} (${percentage}%)`;
+                  return `${label}: ${value} caso${value !== 1 ? 's' : ''} (${percentage}%)`;
+                },
+                footer: function(context) {
+                  const total = context.reduce((sum, item) => sum + (item.parsed || 0), 0);
+                  return 'Total: ' + total + ' caso' + (total !== 1 ? 's' : '');
                 }
               }
             }
@@ -3682,9 +4127,17 @@ Zilda Andrade,ZA`;
           plugins: {
             legend: { display: false },
             tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 10,
+              titleFont: { size: 13, weight: 'bold' },
+              bodyFont: { size: 12 },
               callbacks: {
+                title: function(context) {
+                  return context[0].label;
+                },
                 label: function(context) {
-                  return `Casos: ${context.parsed.y}`;
+                  const valor = context.parsed.y;
+                  return `${valor} caso${valor !== 1 ? 's' : ''}`;
                 }
               }
             }
@@ -3755,15 +4208,19 @@ Zilda Andrade,ZA`;
             tooltip: {
               backgroundColor: 'rgba(0, 0, 0, 0.8)',
               padding: 12,
-              titleFont: { size: 14, weight: 'bold' },
-              bodyFont: { size: 13 },
+              titleFont: { size: 13, weight: 'bold' },
+              bodyFont: { size: 12 },
               borderColor: 'rgba(255, 255, 255, 0.1)',
               borderWidth: 1,
               cornerRadius: 8,
               displayColors: true,
               callbacks: {
+                title: function(context) {
+                  return context[0].label;
+                },
                 label: function(context) {
-                  return `Casos: ${context.parsed.x}`;
+                  const valor = context.parsed.x;
+                  return `${valor} caso${valor !== 1 ? 's' : ''}`;
                 }
               }
             }
@@ -3854,6 +4311,245 @@ Zilda Andrade,ZA`;
       });
     }
     
+    // Renderiza gráfico de barras agrupadas (para correlações)
+    function renderGroupedBarChart(canvasId, labels, datasets) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      
+      // Destroi gráfico anterior se existir
+      if (charts[canvasId]) {
+        charts[canvasId].destroy();
+        delete charts[canvasId];
+      }
+      
+      const ctx = canvas.getContext('2d');
+      charts[canvasId] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                padding: 15,
+                font: { size: 12, weight: 'bold' }
+              }
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': ' + context.parsed.y + ' casos';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              stacked: false,
+              ticks: {
+                font: { size: 11 },
+                maxRotation: 45,
+                minRotation: 45
+              },
+              grid: {
+                display: false
+              }
+            },
+            y: {
+              stacked: false,
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1,
+                font: { size: 11 }
+              },
+              title: {
+                display: true,
+                text: 'Quantidade de Casos',
+                font: { size: 12, weight: 'bold' }
+              }
+            }
+          },
+          onClick: (event, elements) => {
+            if (elements.length > 0) {
+              const element = elements[0];
+              const datasetIndex = element.datasetIndex;
+              const index = element.index;
+              const label = labels[index];
+              const datasetLabel = datasets[datasetIndex].label;
+              aplicarFiltroDoGrafico('chartCorrelacaoTipoIdade', `${label} - ${datasetLabel}`);
+            }
+          }
+        }
+      });
+    }
+    
+    // Renderiza gráfico comparativo de linhas (para análises temporais)
+    function renderComparativeLineChart(canvasId, labels, data1, data2, label1 = 'Período 1', label2 = 'Período 2') {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      
+      // Destroi gráfico anterior se existir
+      if (charts[canvasId]) {
+        charts[canvasId].destroy();
+        delete charts[canvasId];
+      }
+      
+      const ctx = canvas.getContext('2d');
+      charts[canvasId] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: label1,
+              data: data1,
+              borderColor: 'rgba(59, 130, 246, 1)',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              borderWidth: 3,
+              fill: true,
+              tension: 0.4,
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2
+            },
+            {
+              label: label2,
+              data: data2,
+              borderColor: 'rgba(239, 68, 68, 1)',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              borderWidth: 3,
+              fill: true,
+              tension: 0.4,
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                padding: 15,
+                font: { size: 13, weight: 'bold' },
+                usePointStyle: true,
+                pointStyle: 'circle',
+                boxWidth: 12,
+                boxHeight: 12
+              },
+              onClick: (e, legendItem, legend) => {
+                // Permite clicar na legenda para mostrar/ocultar datasets
+                const index = legendItem.datasetIndex;
+                const chart = legend.chart;
+                const meta = chart.getDatasetMeta(index);
+                meta.hidden = meta.hidden === null ? !chart.data.datasets[index].hidden : null;
+                chart.update();
+              }
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 12,
+              titleFont: { size: 13, weight: 'bold' },
+              bodyFont: { size: 12 },
+              callbacks: {
+                title: function(context) {
+                  return 'Mês: ' + context[0].label;
+                },
+                label: function(context) {
+                  return context.dataset.label + ': ' + context.parsed.y + ' caso' + (context.parsed.y !== 1 ? 's' : '');
+                },
+                footer: function(context) {
+                  const total = context.reduce((sum, item) => sum + item.parsed.y, 0);
+                  return 'Total: ' + total + ' caso' + (total !== 1 ? 's' : '');
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                font: { size: 11 },
+                maxRotation: 45,
+                minRotation: 45
+              },
+              grid: {
+                display: false
+              }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1,
+                font: { size: 11 }
+              },
+              title: {
+                display: true,
+                text: 'Quantidade de Casos',
+                font: { size: 12, weight: 'bold' }
+              }
+            }
+          },
+          onClick: (event, elements) => {
+            console.log('[Gráfico Comparativo] Clique detectado no gráfico:', canvasId);
+            console.log('[Gráfico Comparativo] Elements recebidos:', elements);
+            
+            if (elements && elements.length > 0) {
+              const element = elements[0];
+              const index = element.index;
+              const label = labels[index];
+              console.log('[Gráfico Comparativo] Label clicado:', label, 'Index:', index);
+              aplicarFiltroDoGrafico(canvasId, label);
+            } else {
+              console.warn('[Gráfico Comparativo] Nenhum elemento encontrado no clique. Tentando método alternativo...');
+              // Método alternativo para gráfico de linha comparativo
+              const chart = charts[canvasId];
+              if (chart) {
+                const points = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+                if (points && points.length > 0) {
+                  const point = points[0];
+                  const label = labels[point.index];
+                  console.log('[Gráfico Comparativo] Label encontrado via método alternativo:', label);
+                  aplicarFiltroDoGrafico(canvasId, label);
+                } else {
+                  console.error('[Gráfico Comparativo] Não foi possível detectar o elemento clicado');
+                }
+              }
+            }
+          },
+          onHover: (event, elements) => {
+            // Muda cursor para pointer quando hover sobre pontos
+            if (event.native && event.native.target) {
+              const chart = charts[canvasId];
+              if (chart) {
+                const points = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+                event.native.target.style.cursor = points && points.length > 0 ? 'pointer' : 'default';
+              }
+            }
+          }
+        }
+      });
+    }
+    
     function renderLineChart(canvasId, labels, valores) {
       const canvas = document.getElementById(canvasId);
       if (!canvas) return;
@@ -3912,11 +4608,25 @@ Zilda Andrade,ZA`;
             }
           },
           plugins: {
-            legend: { display: true },
+            legend: { 
+              display: true,
+              labels: {
+                font: { size: 12, weight: 'bold' },
+                usePointStyle: true
+              }
+            },
             tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 10,
+              titleFont: { size: 13, weight: 'bold' },
+              bodyFont: { size: 12 },
               callbacks: {
+                title: function(context) {
+                  return 'Mês: ' + context[0].label;
+                },
                 label: function(context) {
-                  return `Casos: ${context.parsed.y}`;
+                  const valor = context.parsed.y;
+                  return `${context.dataset.label}: ${valor} caso${valor !== 1 ? 's' : ''}`;
                 }
               }
             }
@@ -4111,42 +4821,6 @@ Zilda Andrade,ZA`;
       renderTable(filteredData);
     }
 
-    // ==============================
-    // Exportar CSV
-    // ==============================
-    function exportarCSV() {
-      if (!filteredData || filteredData.length === 0) {
-        alert('Não há registros filtrados para exportar.');
-        return;
-      }
-      
-      const headers = Object.keys(filteredData[0]);
-      const linhas = [];
-      linhas.push(headers.join(';'));
-      
-      filteredData.forEach(row => {
-        const linha = headers.map(h => {
-          let val = row[h];
-          if (val === null || val === undefined) val = '';
-          val = String(val).replace(/"/g, '""');
-          return `"${val}"`;
-        }).join(';');
-        linhas.push(linha);
-      });
-      
-      const csvContent = linhas.join('\r\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'registros_filtrados.csv';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
     // ========================================
     // VERIFICAR AUTENTICAÇÃO
     // ========================================
@@ -4157,7 +4831,7 @@ Zilda Andrade,ZA`;
       // Se não estiver autenticado, redireciona para login
       if (!userRole || !userEmail) {
         alert('Acesso negado! Faça login para acessar o sistema.');
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
         return;
       }
 
@@ -4282,7 +4956,7 @@ Zilda Andrade,ZA`;
     function sair() {
       if (confirm('Deseja realmente sair do sistema?')) {
         sessionStorage.clear();
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
       }
     }
 

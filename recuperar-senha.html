@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - Sistema de Registro</title>
+  <title>Recuperar Senha - Sistema de Registro</title>
   
   <!-- Esconde conteúdo IMEDIATAMENTE para evitar flash -->
   <style>
@@ -24,7 +24,7 @@
   <!-- Estilos Elegantes Compartilhados -->
   <link rel="stylesheet" href="assets/css/styles-elegant.css">
   
-  <!-- Configuração Centralizada (DEVE VIR ANTES DOS SCRIPTS QUE USAM CONFIG) -->
+  <!-- Configuração Centralizada -->
   <script src="config.js"></script>
   <script src="assets/js/utils/config-loader.js"></script>
   
@@ -32,7 +32,6 @@
   <script src="assets/js/utils/page-transitions.js"></script>
   
   <style>
-    /* Animações */
     @keyframes fadeInScale {
       from {
         opacity: 0;
@@ -60,7 +59,7 @@
       100% { transform: rotate(360deg); }
     }
     
-    .card-login {
+    .card-recuperacao {
       animation: fadeInScale 0.4s ease-out;
     }
     
@@ -68,7 +67,6 @@
       animation: slideDown 0.3s ease-out;
     }
     
-    /* Loading spinner */
     .spinner {
       border: 3px solid #f3f4f6;
       border-top: 3px solid #3b82f6;
@@ -78,13 +76,6 @@
       animation: spin 1s linear infinite;
     }
     
-    /* Botão toggle senha */
-    .password-toggle {
-      cursor: pointer;
-      user-select: none;
-    }
-    
-    /* Efeito de pulso no botão */
     @keyframes pulse-subtle {
       0%, 100% {
         opacity: 1;
@@ -108,18 +99,15 @@
     <div class="bg-gradient-to-r from-white to-blue-50/30 rounded-xl sm:rounded-2xl shadow-xl border border-white/60 backdrop-blur-sm p-6 sm:p-8 mb-6 sm:mb-8">
       <div class="flex flex-col items-center justify-center gap-3 sm:gap-4 mb-3">
         <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-4 sm:p-5 rounded-xl sm:rounded-2xl shadow-lg">
-          <span class="text-5xl sm:text-6xl">👤</span>
+          <span class="text-5xl sm:text-6xl">🔑</span>
         </div>
         <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800 text-center">
-          Bem-vindo
+          Recuperar Senha
         </h1>
       </div>
       <div class="flex flex-col items-center gap-2">
         <p class="text-gray-600 text-center text-sm sm:text-base max-w-md">
-          Sistema de Registro de Violência Escolar
-        </p>
-        <p class="text-gray-500 text-center text-xs sm:text-sm">
-          Faça login para acessar o sistema
+          Digite seu e-mail para receber instruções de recuperação
         </p>
       </div>
     </div>
@@ -127,23 +115,30 @@
     <!-- Área de Alertas -->
     <div id="alertContainer" class="mb-4"></div>
     
-    <!-- Card de Login -->
-    <div class="card-login bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 p-6 sm:p-8">
+    <!-- Card de Recuperação -->
+    <div class="card-recuperacao bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 p-6 sm:p-8 relative">
       
       <!-- Loading Overlay -->
       <div id="loadingOverlay" class="hidden absolute inset-0 bg-white/90 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center z-10">
         <div class="spinner mb-4"></div>
-        <p class="text-gray-600 font-medium">Autenticando...</p>
+        <p class="text-gray-600 font-medium">Enviando solicitação...</p>
       </div>
       
-      <!-- Formulário de Login -->
-      <form id="loginForm" onsubmit="return realizarLogin(event)" class="space-y-6">
+      <!-- Formulário de Recuperação -->
+      <form id="formRecuperacao" onsubmit="return solicitarRecuperacao(event)" class="space-y-6">
         
         <div class="text-center mb-6">
           <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
-            Entrar no Sistema
+            Esqueci minha senha
           </h2>
           <div class="h-1 w-20 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full mx-auto"></div>
+        </div>
+        
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <p class="text-sm text-blue-800">
+            <strong>ℹ️ Como funciona:</strong><br>
+            Digite seu e-mail cadastrado. Você receberá um link para redefinir sua senha.
+          </p>
         </div>
         
         <!-- Campo E-mail -->
@@ -162,69 +157,24 @@
             aria-label="Campo de e-mail">
         </div>
         
-        <!-- Campo Senha -->
-        <div>
-          <label for="password" class="block text-sm font-bold text-gray-700 mb-2">
-            🔒 Senha <span class="text-red-500">*</span>
-          </label>
-          <div class="relative">
-            <input 
-              type="password" 
-              id="password" 
-              name="password"
-              required
-              placeholder="Digite sua senha"
-              autocomplete="current-password"
-              class="w-full px-4 py-3 pr-12 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
-              aria-label="Campo de senha">
-            <button 
-              type="button"
-              onclick="toggleMostrarSenha()"
-              class="password-toggle absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors p-2 rounded-lg hover:bg-gray-100"
-              aria-label="Mostrar/ocultar senha"
-              tabindex="-1">
-              <span id="iconeSenha" class="text-xl">👁️</span>
-            </button>
-          </div>
-        </div>
-        
-        <!-- Checkbox Mostrar Senha -->
-        <div class="flex items-center">
-          <input 
-            type="checkbox" 
-            id="checkMostrarSenha"
-            onchange="toggleMostrarSenhaCheckbox()"
-            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer">
-          <label for="checkMostrarSenha" class="ml-2 text-sm text-gray-700 cursor-pointer select-none hover:text-gray-900">
-            Mostrar senha
-          </label>
-        </div>
-        
-        <!-- Botão Entrar -->
+        <!-- Botão Enviar -->
         <button 
           type="submit"
-          id="btnEntrar"
+          id="btnEnviar"
           class="btn-elegant btn-primary-elegant w-full text-white font-bold py-3 sm:py-4 px-6 rounded-xl shadow-lg flex items-center justify-center gap-2"
-          aria-label="Entrar no sistema">
-          <span class="text-lg">🔓</span>
-          <span id="btnTexto">Entrar</span>
+          aria-label="Enviar solicitação de recuperação">
+          <span class="text-lg">📧</span>
+          <span id="btnTexto">Enviar Solicitação</span>
         </button>
         
-        <!-- Link para recuperar senha -->
+        <!-- Link para voltar ao login -->
         <div class="text-center mt-4">
-          <a href="recuperar-senha.html" class="text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors">
-            🔑 Esqueci minha senha
+          <a href="index.html" class="text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors">
+            ← Voltar para o login
           </a>
         </div>
         
       </form>
-      
-      <!-- Informações Adicionais -->
-      <div class="mt-6 pt-6 border-t border-gray-200">
-        <p class="text-xs text-center text-gray-500">
-          🔒 Acesso restrito a usuários autorizados
-        </p>
-      </div>
       
     </div>
     
@@ -242,9 +192,6 @@
     
   </div>
   
-  <!-- Hidden iframe para envio de dados (evita CORS) -->
-  <iframe id="hidden_iframe" name="hidden_iframe" style="display:none;"></iframe>
-  
   <!-- =============================================== -->
   <!-- JAVASCRIPT -->
   <!-- =============================================== -->
@@ -252,21 +199,14 @@
     // ========================================
     // CONFIGURAÇÃO DO GOOGLE APPS SCRIPT
     // ========================================
-    // Aguarda o CONFIG estar disponível
     let APPS_SCRIPT_URL;
     
     if (typeof CONFIG !== 'undefined' && CONFIG.APPS_SCRIPT_AUTH) {
       APPS_SCRIPT_URL = CONFIG.APPS_SCRIPT_AUTH;
-      console.log('✅ Usando APPS_SCRIPT_AUTH do config.js:', APPS_SCRIPT_URL.substring(0, 50) + '...');
+      console.log('✅ Usando APPS_SCRIPT_AUTH do config.js');
     } else {
-      // Fallback para valor padrão
       APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUXV0q7XBz8Tdt4RuU7Qt-eSBrtOjM3ZyOpS905B2Qplp0_w0qsPBzebqVq4qi5_o/exec';
       console.warn('⚠️ CONFIG não encontrado, usando URL padrão');
-    }
-    
-    // Validação: Verifica se está configurado
-    if (APPS_SCRIPT_URL.includes('SEU_ID_AQUI')) {
-      console.error('❌ ERRO: Configure APPS_SCRIPT_AUTH em config.js para usar o sistema de login');
     }
     
     // ========================================
@@ -274,8 +214,6 @@
     // ========================================
     function mostrarAlerta(mensagem, tipo) {
       const container = document.getElementById('alertContainer');
-      
-      // Remove alertas anteriores
       container.innerHTML = '';
       
       const alertDiv = document.createElement('div');
@@ -307,7 +245,6 @@
       
       container.appendChild(alertDiv);
       
-      // Remove automaticamente após 5 segundos (exceto erros)
       if (tipo !== 'erro') {
         setTimeout(() => {
           alertDiv.style.transition = 'all 0.3s ease-out';
@@ -317,7 +254,6 @@
         }, 5000);
       }
       
-      // Scroll suave para o alerta
       alertDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
     
@@ -326,55 +262,37 @@
     // ========================================
     function mostrarLoading() {
       document.getElementById('loadingOverlay').classList.remove('hidden');
-      document.getElementById('btnEntrar').disabled = true;
-      document.getElementById('btnEntrar').classList.add('btn-loading', 'opacity-50', 'cursor-not-allowed');
-      document.getElementById('btnTexto').textContent = 'Aguarde...';
+      document.getElementById('btnEnviar').disabled = true;
+      document.getElementById('btnEnviar').classList.add('btn-loading', 'opacity-50', 'cursor-not-allowed');
+      document.getElementById('btnTexto').textContent = 'Enviando...';
     }
     
     function esconderLoading() {
       document.getElementById('loadingOverlay').classList.add('hidden');
-      document.getElementById('btnEntrar').disabled = false;
-      document.getElementById('btnEntrar').classList.remove('btn-loading', 'opacity-50', 'cursor-not-allowed');
-      document.getElementById('btnTexto').textContent = 'Entrar';
+      document.getElementById('btnEnviar').disabled = false;
+      document.getElementById('btnEnviar').classList.remove('btn-loading', 'opacity-50', 'cursor-not-allowed');
+      document.getElementById('btnTexto').textContent = 'Enviar Solicitação';
     }
     
     // ========================================
-    // TOGGLE MOSTRAR/OCULTAR SENHA
+    // SOLICITAR RECUPERAÇÃO DE SENHA
     // ========================================
-    function toggleMostrarSenha() {
-      const senhaInput = document.getElementById('password');
-      const icone = document.getElementById('iconeSenha');
-      const checkbox = document.getElementById('checkMostrarSenha');
-      
-      if (senhaInput.type === 'password') {
-        senhaInput.type = 'text';
-        icone.textContent = '🙈';
-        checkbox.checked = true;
-      } else {
-        senhaInput.type = 'password';
-        icone.textContent = '👁️';
-        checkbox.checked = false;
-      }
-    }
-    
-    function toggleMostrarSenhaCheckbox() {
-      toggleMostrarSenha();
-    }
-    
-    // ========================================
-    // REALIZAR LOGIN
-    // ========================================
-    async function realizarLogin(event) {
+    async function solicitarRecuperacao(event) {
       event.preventDefault();
       event.stopPropagation();
       
-      // Coleta dados
       const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
       
       // Validação básica
-      if (!email || !password) {
-        mostrarAlerta('Por favor, preencha todos os campos.', 'erro');
+      if (!email) {
+        mostrarAlerta('Por favor, digite seu e-mail.', 'erro');
+        return false;
+      }
+      
+      // Validação de formato de e-mail
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        mostrarAlerta('Por favor, digite um e-mail válido.', 'erro');
         return false;
       }
       
@@ -382,15 +300,12 @@
       mostrarLoading();
       
       try {
-        // Prepara dados para envio
         const dados = {
-          action: 'login',
-          email: email,
-          password: password
+          action: 'request_password_reset',
+          email: email
         };
         
-        // Faz requisição POST simples (sem logs para melhor performance)
-        console.log('🔄 Enviando requisição para:', APPS_SCRIPT_URL.substring(0, 50) + '...');
+        console.log('🔄 Enviando solicitação de recuperação...');
         const response = await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
           headers: {
@@ -402,99 +317,59 @@
         
         console.log('📥 Resposta recebida, status:', response.status);
         
-        // Verifica se a resposta é OK
         if (!response.ok) {
           throw new Error(`Erro HTTP: ${response.status} ${response.statusText}`);
         }
         
-        // Lê a resposta como texto primeiro para debug
         const responseText = await response.text();
-        console.log('📄 Resposta (texto):', responseText.substring(0, 200));
+        console.log('📄 Resposta:', responseText.substring(0, 200));
         
-        // Tenta parsear como JSON
         let resultado;
         try {
           resultado = JSON.parse(responseText);
         } catch (parseError) {
           console.error('❌ Erro ao parsear JSON:', parseError);
-          console.error('Resposta completa:', responseText);
           throw new Error('Resposta inválida do servidor');
         }
         
-        // Processa o resultado
-        // Verifica tanto 'sucesso' quanto 'success' (compatibilidade)
-        const loginSucesso = resultado.sucesso || resultado.success;
+        const sucesso = resultado.sucesso || resultado.success;
         
-        if (loginSucesso) {
-          // Salva informações do usuário
-          sessionStorage.setItem('userEmail', resultado.email || email);
-          sessionStorage.setItem('userRole', resultado.role || 'user');
-          sessionStorage.setItem('userId', resultado.id || '');
+        if (sucesso) {
+          esconderLoading();
           
-          // Redireciona imediatamente baseado no role (sem delay)
-          if (resultado.role === 'admin' || resultado.role === 'superuser') {
-            window.location.href = 'gerenciar-usuarios.html';
-          } else if (resultado.role === 'visualizador') {
-            window.location.href = 'painel-casos.html';
-          } else {
-            window.location.href = 'gerenciar-casos.html';
-          }
+          // Mostra mensagem de sucesso com instruções
+          const mensagem = resultado.mensagem || resultado.message || 'Instruções enviadas para seu e-mail!';
+          mostrarAlerta(mensagem, 'sucesso');
+          
+          // Em produção, o token não é retornado (segurança)
+          // O email é enviado automaticamente
+          
+          // Limpa o campo de e-mail
+          document.getElementById('email').value = '';
           
         } else {
-          // Login falhou
           esconderLoading();
-          const mensagemErro = resultado.mensagem || resultado.message || 'E-mail ou senha incorretos.';
-          
-          // Verifica se é erro de script errado
-          if (mensagemErro.includes('autenticação') || mensagemErro.includes('APPS_SCRIPT_AUTH')) {
-            mostrarAlerta('❌ Erro de configuração: A URL do script de autenticação está incorreta. Verifique config.js', 'erro');
-            console.error('❌ URL do script de autenticação pode estar apontando para o script errado');
-          } else {
-            mostrarAlerta(mensagemErro, 'erro');
-          }
-          
-          document.getElementById('password').value = '';
-          document.getElementById('password').focus();
+          const mensagemErro = resultado.mensagem || resultado.message || 'Erro ao processar solicitação.';
+          mostrarAlerta(mensagemErro, 'erro');
         }
         
       } catch (erro) {
-        console.error('❌ Erro ao realizar login:', erro);
+        console.error('❌ Erro ao solicitar recuperação:', erro);
         esconderLoading();
         mostrarAlerta('Erro ao conectar com o servidor. Tente novamente.', 'erro');
-        document.getElementById('password').value = '';
       }
       
       return false;
     }
     
     // ========================================
-    // TECLA ENTER NOS CAMPOS
+    // FOCUS AUTOMÁTICO
     // ========================================
     document.addEventListener('DOMContentLoaded', function() {
-      // Focus automático no campo de email
       document.getElementById('email').focus();
-      
-      // Enter nos campos submete o form
-      document.getElementById('email').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          document.getElementById('password').focus();
-        }
-      });
-      
-      document.getElementById('password').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          document.getElementById('loginForm').dispatchEvent(new Event('submit'));
-        }
-      });
     });
-    
-    // ========================================
-    // PREVINE MÚLTIPLOS SUBMITS
-    // ========================================
-    // A prevenção agora é feita via estado do botão (disabled) na função mostrarLoading()
   </script>
   
 </body>
 </html>
+
