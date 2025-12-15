@@ -10,7 +10,7 @@
 
 **Sistema web completo e moderno para registro, gerenciamento e acompanhamento de casos de violência escolar**
 
-[🌐 Acessar Sistema](https://gabrielgaks.github.io/sistema-registro-violencia/FormularioRegistroV2/index.html) • [🚀 Funcionalidades](#-funcionalidades) • [🛠️ Tecnologias](#️-tecnologias) • [📦 Instalação](#-instalação) • [🔒 Segurança](#-segurança) • [📚 Documentação](#-documentação)
+[🌐 Acessar Sistema](gabrielgaks.github.io/sistema-registro-violencia//index.html) • [🚀 Funcionalidades](#-funcionalidades) • [🛠️ Tecnologias](#️-tecnologias) • [📦 Instalação](#-instalação) • [🔒 Segurança](#-segurança) • [📚 Documentação](#-documentação)
 
 [![Deploy](https://img.shields.io/badge/Deploy-GitHub%20Pages-blue?style=for-the-badge&logo=github)](https://gabrielgaks.github.io/sistema-registro-violencia/FormularioRegistroV2/index.html)
 [![Issues](https://img.shields.io/github/issues/GabrielGaks/sistema-registro-violencia?style=for-the-badge&logo=github)](https://github.com/GabrielGaks/sistema-registro-violencia/issues)
@@ -664,7 +664,7 @@ _Dezembro de 2025_
 
 [![Reportar Bug](https://img.shields.io/badge/🐛-Reportar_Bug-red?style=for-the-badge)](https://github.com/GabrielGaks/sistema-registro-violencia/issues)
 [![Solicitar Funcionalidade](https://img.shields.io/badge/✨-Nova_Funcionalidade-green?style=for-the-badge)](https://github.com/GabrielGaks/sistema-registro-violencia/issues)
-[![Acessar Sistema](https://img.shields.io/badge/🌐-Acessar_Sistema-blue?style=for-the-badge)](https://gabrielgaks.github.io/sistema-registro-violencia/FormularioRegistroV2/index.html)
+[![Acessar Sistema](https://img.shields.io/badge/🌐-Acessar_Sistema-blue?style=for-the-badge)](gabrielgaks.github.io/sistema-registro-violencia//index.html)
 
 **Made with ❤️ for education and children's safety**
 
